@@ -1,9 +1,9 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { Pressable, Text, useColorScheme, View } from 'react-native';
 
 import { ContentState } from '@/components/content-state';
 import { themes } from '@/constants/theme';
@@ -52,7 +52,23 @@ function RootNavigator() {
       <Stack.Protected guard={state === 'authenticated'}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="feed/[id]" options={{ title: 'Message' }} />
-        <Stack.Screen name="alerts/new" options={{ title: 'New alert', presentation: 'modal' }} />
+        <Stack.Screen
+          name="alerts/new"
+          options={{
+            title: 'New alert',
+            presentation: 'modal',
+            headerLeft: () => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cancel new alert"
+                hitSlop={8}
+                onPress={() => router.back()}
+                style={({ pressed }) => ({ justifyContent: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ color: theme.red, fontSize: 17 }}>Cancel</Text>
+              </Pressable>
+            ),
+          }}
+        />
       </Stack.Protected>
     </Stack>
   );
