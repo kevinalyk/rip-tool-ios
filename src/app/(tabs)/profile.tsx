@@ -7,11 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OfflineBanner } from '@/components/offline-banner';
 import { PrimaryButton } from '@/components/primary-button';
+import { PASSWORD_HELP_URL, PRIVACY_POLICY_URL, SUPPORT_EMAIL_URL } from '@/constants/links';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { initials, titleCase } from '@/lib/format';
 import { useAuth } from '@/providers/auth-provider';
-
-const WEB_APP_URL = 'https://app.rip-tool.com';
 
 function SettingsRow({
   icon,
@@ -122,11 +121,11 @@ export default function ProfileScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>HELP & LEGAL</Text>
-          <SettingsRow icon="key-outline" label="Reset password" onPress={() => void WebBrowser.openBrowserAsync(`${WEB_APP_URL}/reset-password`)} />
+          <SettingsRow icon="key-outline" label="Password help" onPress={() => void WebBrowser.openBrowserAsync(PASSWORD_HELP_URL)} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <SettingsRow icon="help-circle-outline" label="Support" onPress={() => void Linking.openURL('mailto:support@rip-tool.com')} />
+          <SettingsRow icon="help-circle-outline" label="Support" onPress={() => void Linking.openURL(SUPPORT_EMAIL_URL)} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <SettingsRow icon="shield-checkmark-outline" label="Privacy policy" onPress={() => void WebBrowser.openBrowserAsync(`${WEB_APP_URL}/privacy`)} />
+          <SettingsRow icon="shield-checkmark-outline" label="Privacy policy" onPress={() => void WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)} />
         </View>
 
         <PrimaryButton label="Sign out" variant="secondary" loading={signingOut} onPress={confirmSignOut} />

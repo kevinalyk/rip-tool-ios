@@ -16,11 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/brand-logo';
 import { PrimaryButton } from '@/components/primary-button';
+import { PASSWORD_HELP_URL } from '@/constants/links';
 import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
 import { ApiError } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
-
-const WEB_APP_URL = 'https://app.rip-tool.com';
 
 export default function LoginScreen() {
   const theme = useAppTheme();
@@ -122,7 +121,7 @@ export default function LoginScreen() {
 
             <Pressable
               accessibilityRole="link"
-              onPress={() => void WebBrowser.openBrowserAsync(`${WEB_APP_URL}/reset-password`)}
+              onPress={() => void WebBrowser.openBrowserAsync(PASSWORD_HELP_URL)}
               style={styles.linkButton}>
               <Text style={[styles.linkText, { color: theme.red }]}>
                 {requiresReset ? 'Reset your password to continue' : 'Forgot password?'}
