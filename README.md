@@ -1,6 +1,6 @@
-# RIP Tool for iPhone
+# Inbox.GOP for iPhone
 
-Native iPhone client for RIP Tool, built with Expo and React Native. It uses the dedicated bearer-token API at `/api/mobile/v1`; it does not reuse the website’s cookie session.
+Native iPhone client for Inbox.GOP, built with Expo and React Native. It uses the dedicated bearer-token API at `/api/mobile/v1`; it does not reuse the website’s cookie session.
 
 ## First release
 
@@ -49,7 +49,7 @@ The pure unit tests cover feed query serialization, safe CTA-link handling, and 
 
 The app can be developed and run in the Simulator before Apple Developer enrollment finishes. A simulator-only EAS build also does not require Apple signing. Once the account is active:
 
-1. Confirm that the bundle identifier `com.riptool.app` is available and belongs to the correct Apple team.
+1. Confirm that the bundle identifier `com.inboxgop.app` is available and belongs to the correct Apple team.
 2. Create or sign in to an Expo account.
 3. Run `pnpm dlx eas-cli@latest login`.
 4. Run `pnpm dlx eas-cli@latest build:configure` and accept the existing iOS profiles in `eas.json`.

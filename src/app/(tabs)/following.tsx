@@ -5,6 +5,7 @@ import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } fr
 import { ContentState } from '@/components/content-state';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { OfflineBanner } from '@/components/offline-banner';
+import { PRODUCT_NAME } from '@/constants/branding';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { Entity } from '@/lib/api/types';
@@ -24,7 +25,7 @@ export default function FollowingScreen() {
   });
 
   const confirmUnfollow = (entity: Entity) => {
-    Alert.alert('Unfollow entity?', `RIP Tool will stop prioritizing messages from ${entity.name}.`, [
+    Alert.alert('Unfollow entity?', `${PRODUCT_NAME} will stop prioritizing messages from ${entity.name}.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Unfollow', style: 'destructive', onPress: () => unfollow.mutate(entity.id) },
     ]);

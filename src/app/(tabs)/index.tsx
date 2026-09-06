@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  type ListRenderItemInfo,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -53,12 +54,18 @@ export default function FeedScreen() {
     getNextPageParam: (lastPage) => (lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined),
   });
 
-  const items = feed.data?.pages.flatMap((page) => page.data) || [];
+  const pages = feed.data?.pages;
+  const items = useMemo(() => pages?.flatMap((page) => page.data) ?? [], [pages]);
   const refreshing = feed.isRefetching && !feed.isFetchingNextPage;
 
-  const openItem = (item: FeedItem) => {
+  const openItem = useCallback((item: FeedItem) => {
     router.push({ pathname: '/feed/[id]', params: { id: item.id, type: item.type } });
-  };
+  }, []);
+
+  const renderFeedItem = useCallback(
+    ({ item }: ListRenderItemInfo<FeedItem>) => <FeedCard item={item} onPress={openItem} />,
+    [openItem],
+  );
 
   if (feed.isLoading) {
     return (
@@ -88,16 +95,21 @@ export default function FeedScreen() {
     <View style={[styles.flex, { backgroundColor: theme.background }]}>
       <OfflineBanner />
       <FlatList
+        contentInsetAdjustmentBehavior="automatic"
         data={items}
+        initialNumToRender={8}
         keyExtractor={(item) => `${item.type}:${item.id}`}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        maxToRenderPerBatch={8}
         onEndReached={() => {
           if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();
         }}
         onEndReachedThreshold={0.45}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void feed.refetch()} tintColor={theme.red} />}
-        renderItem={({ item }) => <FeedCard item={item} onPress={() => openItem(item)} />}
+        renderItem={renderFeedItem}
+        updateCellsBatchingPeriod={50}
+        windowSize={7}
         contentContainerStyle={[styles.listContent, items.length === 0 && styles.emptyList]}
         ListHeaderComponent={
           <View style={styles.header}>

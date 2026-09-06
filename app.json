@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "RIP Tool",
-    "slug": "rip-tool-ios",
+    "name": "Inbox.GOP",
+    "slug": "inbox-gop-ios",
     "version": "1.0.0",
+    "platforms": ["ios"],
     "orientation": "portrait",
-    "icon": "./assets/images/rip-app-icon.png",
-    "scheme": "riptool",
+    "icon": "./assets/images/inbox-gop-app-icon.png",
+    "scheme": "inboxgop",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.riptool.app",
+      "bundleIdentifier": "com.inboxgop.app",
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -16,7 +17,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/rip-app-icon.png"
+      "favicon": "./assets/images/inbox-gop-app-icon.png"
     },
     "plugins": [
       "expo-router",
@@ -27,7 +28,7 @@
           "dark": {
             "backgroundColor": "#0B1720"
           },
-          "image": "./assets/images/rip-mark.png",
+          "image": "./assets/images/inbox-gop-mark.png",
           "imageWidth": 116
         }
       ],

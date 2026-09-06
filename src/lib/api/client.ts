@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import * as Device from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
 
+import { PRODUCT_NAME } from '@/constants/branding';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { ApiErrorBody, LoginResponse, RefreshResponse } from '@/lib/api/types';
 
@@ -28,7 +29,7 @@ export class ApiError extends Error {
 }
 
 export class NetworkError extends Error {
-  constructor(message = 'Unable to reach RIP Tool. Check your connection and try again.') {
+  constructor(message = `Unable to reach ${PRODUCT_NAME}. Check your connection and try again.`) {
     super(message);
     this.name = 'NetworkError';
   }
@@ -78,7 +79,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
   try {
     body = raw ? (JSON.parse(raw) as T & ApiErrorBody) : undefined;
   } catch {
-    throw new ApiError(response.status, 'INVALID_RESPONSE', 'RIP Tool returned an unexpected response.');
+    throw new ApiError(response.status, 'INVALID_RESPONSE', `${PRODUCT_NAME} returned an unexpected response.`);
   }
 
   if (!response.ok) {

@@ -1,4 +1,4 @@
-name: iOS app checks
+name: Inbox.GOP iOS checks
 
 on:
   pull_request:

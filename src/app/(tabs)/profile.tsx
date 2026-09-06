@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OfflineBanner } from '@/components/offline-banner';
 import { PrimaryButton } from '@/components/primary-button';
+import { PRODUCT_NAME } from '@/constants/branding';
 import { PASSWORD_HELP_URL, PRIVACY_POLICY_URL, SUPPORT_EMAIL_URL } from '@/constants/links';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { initials, titleCase } from '@/lib/format';
@@ -129,7 +130,7 @@ export default function ProfileScreen() {
         </View>
 
         <PrimaryButton label="Sign out" variant="secondary" loading={signingOut} onPress={confirmSignOut} />
-        <Text style={[styles.version, { color: theme.textMuted }]}>RIP Tool for iPhone · Version {Constants.expoConfig?.version || '1.0.0'}</Text>
+        <Text style={[styles.version, { color: theme.textMuted }]}>{PRODUCT_NAME} for iPhone · Version {Constants.expoConfig?.version || '1.0.0'}</Text>
       </ScrollView>
     </SafeAreaView>
   );

@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/brand-logo';
 import { PrimaryButton } from '@/components/primary-button';
+import { PRODUCT_NAME } from '@/constants/branding';
 import { PASSWORD_HELP_URL } from '@/constants/links';
 import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
 import { ApiError } from '@/lib/api/client';
@@ -60,7 +61,7 @@ export default function LoginScreen() {
           <View style={styles.hero}>
             <BrandLogo />
             <Text style={[styles.heading, { color: theme.text }]}>Political intelligence, in your pocket.</Text>
-            <Text style={[styles.subheading, { color: theme.textMuted }]}>Sign in with your existing RIP Tool account.</Text>
+            <Text style={[styles.subheading, { color: theme.textMuted }]}>Sign in with your existing {PRODUCT_NAME} account.</Text>
           </View>
 
           <View style={[styles.card, shadows.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>

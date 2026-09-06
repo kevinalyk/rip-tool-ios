@@ -1,0 +1,2 @@
+export const PRODUCT_NAME = 'Inbox.GOP';
+export const PRODUCT_TAGLINE = 'POLITICAL INTELLIGENCE';

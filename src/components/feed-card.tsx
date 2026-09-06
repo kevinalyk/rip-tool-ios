@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { EntityAvatar } from '@/components/entity-avatar';
@@ -8,10 +9,10 @@ import { formatDate, titleCase } from '@/lib/format';
 
 type FeedCardProps = {
   item: FeedItem;
-  onPress: () => void;
+  onPress: (item: FeedItem) => void;
 };
 
-export function FeedCard({ item, onPress }: FeedCardProps) {
+export const FeedCard = memo(function FeedCard({ item, onPress }: FeedCardProps) {
   const theme = useAppTheme();
   const entityName = item.entity?.name || item.senderName || 'Unknown sender';
 
@@ -19,7 +20,7 @@ export function FeedCard({ item, onPress }: FeedCardProps) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${item.type === 'sms' ? 'Text' : 'Email'} from ${entityName}: ${item.subject}`}
-      onPress={onPress}
+      onPress={() => onPress(item)}
       style={({ pressed }) => [
         styles.card,
         shadows.card,
@@ -52,7 +53,7 @@ export function FeedCard({ item, onPress }: FeedCardProps) {
       </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
