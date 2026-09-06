@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "RIP Tool",
+    "slug": "rip-tool-ios",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/rip-app-icon.png",
+    "scheme": "riptool",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.riptool.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/rip-app-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F5F7F9",
+          "dark": {
+            "backgroundColor": "#0B1720"
+          },
+          "image": "./assets/images/rip-mark.png",
+          "imageWidth": 116
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
