@@ -93,14 +93,28 @@ export type FeedFilterOptions = {
   states: string[];
   parties: SelectOption[];
   offices: SelectOption[];
+  entityTypes?: SelectOption[];
+  messageFilters?: SelectOption[];
+  donationPlatforms?: SelectOption[];
+  entities?: FeedFilterEntity[];
 };
+
+export type FeedFilterEntity = Pick<Entity, 'id' | 'name' | 'type' | 'party' | 'state'> & {
+  isFollowing: boolean;
+};
+
+export type MessageFilter = 'email' | 'sms' | 'third_party' | 'house_file';
 
 export type FeedFilters = {
   search?: string;
+  entityIds?: string[];
   party?: string;
   state?: string;
-  office?: string;
-  messageType?: MessageType;
+  entityType?: string;
+  messageFilters?: MessageFilter[];
+  donationPlatform?: string;
+  fromDate?: string;
+  toDate?: string;
   subscriptionsOnly?: boolean;
 };
 
