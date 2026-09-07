@@ -10,7 +10,6 @@ import {
   Share,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -27,7 +26,6 @@ type DetailSection = 'preview' | 'links';
 
 export default function FeedDetailScreen() {
   const theme = useAppTheme();
-  const { height: windowHeight } = useWindowDimensions();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id: string; type?: string }>();
   const [section, setSection] = useState<DetailSection>('preview');
@@ -167,12 +165,13 @@ export default function FeedDetailScreen() {
                 html={item.emailContent}
                 dom={{
                   automaticallyAdjustContentInsets: false,
-                  bounces: true,
+                  bounces: false,
                   contentInsetAdjustmentBehavior: 'never',
-                  scrollEnabled: true,
+                  matchContents: true,
+                  scrollEnabled: false,
                   showsHorizontalScrollIndicator: false,
-                  showsVerticalScrollIndicator: true,
-                  style: { height: Math.max(560, windowHeight - 170), width: '100%' },
+                  showsVerticalScrollIndicator: false,
+                  style: { minHeight: 560, width: '100%' },
                 }}
               />
             </View>

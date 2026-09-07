@@ -138,14 +138,12 @@ export default function EmailPreview({ html }: EmailPreviewProps) {
     <main aria-label="Email preview" className="preview-shell">
       <style>{`
         * { box-sizing: border-box; }
-        html, body, #root { height: 100%; margin: 0; width: 100%; }
+        html, body, #root { margin: 0; min-height: 100%; width: 100%; }
         body { background: #ffffff; }
         .preview-shell {
-          -webkit-overflow-scrolling: touch;
           background: #ffffff;
-          height: 100%;
           overflow-x: hidden;
-          overflow-y: auto;
+          min-height: 100%;
           width: 100%;
         }
         .preview-host { overflow: hidden; width: 100%; }
