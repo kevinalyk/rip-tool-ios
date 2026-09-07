@@ -166,7 +166,12 @@ export default function FeedDetailScreen() {
               <EmailPreview
                 html={item.emailContent}
                 dom={{
+                  automaticallyAdjustContentInsets: false,
+                  bounces: true,
                   contentInsetAdjustmentBehavior: 'never',
+                  scrollEnabled: true,
+                  showsHorizontalScrollIndicator: false,
+                  showsVerticalScrollIndicator: true,
                   style: { height: Math.max(560, windowHeight - 170), width: '100%' },
                 }}
               />

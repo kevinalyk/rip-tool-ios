@@ -67,7 +67,7 @@ This first release deliberately supports **existing accounts only** and does not
 
 - Campaign alerts are managed in-app, but push notifications are not enabled yet.
 - Password resets open the secure website flow.
-- Email HTML is rendered inside Expo's isolated DOM web view. The embedded email is
-  sandboxed with scripts, forms, popups, and navigation disabled; links are exposed
-  separately through the validated native CTA list.
+- Email HTML is sanitized and rendered inside an isolated shadow document in Expo's
+  DOM web view. Scripts, forms, embedded frames, and navigation are removed; links
+  are exposed separately through the validated native CTA list.
 - The app is configured for iPhone only (`supportsTablet: false`).
