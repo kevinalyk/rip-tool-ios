@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 
+import { ActiveFilterBar } from '@/components/active-filter-bar';
 import { ContentState } from '@/components/content-state';
 import { FeedCard } from '@/components/feed-card';
 import { FilterModal } from '@/components/filter-modal';
@@ -39,10 +40,13 @@ export default function FeedScreen() {
     [debouncedSearch, filters],
   );
   const activeFilterCount = [
+    filters.entityIds?.length,
     filters.party,
     filters.state,
-    filters.office,
-    filters.messageType,
+    filters.entityType,
+    filters.messageFilters?.length,
+    filters.donationPlatform,
+    filters.fromDate || filters.toDate,
     filters.subscriptionsOnly,
   ].filter(Boolean).length;
 
@@ -149,6 +153,8 @@ export default function FeedScreen() {
                 {activeFilterCount ? <Text style={styles.filterCount}>{activeFilterCount}</Text> : null}
               </Pressable>
             </View>
+
+            <ActiveFilterBar filters={filters} options={filterOptions.data} onChange={setFilters} />
           </View>
         }
         ListEmptyComponent={

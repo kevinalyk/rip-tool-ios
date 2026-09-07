@@ -12,23 +12,50 @@ test('buildFeedQuery serializes every supported mobile feed filter', () => {
   const query = buildFeedQuery(
     {
       search: 'fundraising',
+      entityIds: ['entity-1', 'entity-2'],
       party: 'republican',
       state: 'TX',
-      office: 'senate',
-      messageType: 'email',
+      entityType: 'politician',
+      messageFilters: ['email', 'third_party'],
+      donationPlatform: 'winred',
+      fromDate: '2026-08-01',
+      toDate: '2026-09-06',
       subscriptionsOnly: true,
     },
     'cursor-value',
   );
 
   const params = new URLSearchParams(query);
-  assert.deepEqual(Object.fromEntries(params), {
+  assert.deepEqual(params.getAll('entityId'), ['entity-1', 'entity-2']);
+  assert.deepEqual(Object.fromEntries([...params].filter(([key]) => key !== 'entityId')), {
     search: 'fundraising',
     party: 'republican',
     state: 'TX',
-    office: 'senate',
+    entityType: 'politician',
     messageType: 'email',
+    thirdParty: 'true',
+    donationPlatform: 'winred',
+    fromDate: '2026-08-01',
+    toDate: '2026-09-06',
     subscriptionsOnly: 'true',
     cursor: 'cursor-value',
   });
+});
+
+test('buildFeedQuery treats both values in a message dimension as no restriction', () => {
+  const query = buildFeedQuery({
+    messageFilters: ['email', 'sms', 'third_party', 'house_file'],
+  });
+
+  const params = new URLSearchParams(query);
+  assert.equal(params.has('messageType'), false);
+  assert.equal(params.has('thirdParty'), false);
+  assert.equal(params.has('houseFileOnly'), false);
+});
+
+test('buildFeedQuery serializes SMS and house-file selections', () => {
+  assert.equal(
+    buildFeedQuery({ messageFilters: ['sms', 'house_file'] }),
+    '?messageType=sms&houseFileOnly=true',
+  );
 });
