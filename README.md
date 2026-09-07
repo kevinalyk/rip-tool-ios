@@ -8,7 +8,8 @@ Native iPhone client for Inbox.GOP, built with Expo and React Native. It uses th
 - Rotating mobile session with the refresh token stored in iOS secure storage
 - Automatic single-flight token refresh and forced-session handling
 - Cursor-paginated email/SMS feed with search and filters
-- Message detail with inbox placement and safe external CTA links
+- Message detail with a sandboxed visual email preview, native SMS presentation,
+  safe external CTA links, and the iPhone share sheet
 - Followed entities with follow-limit error handling
 - Campaign alert creation, listing, and deletion
 - Profile, organization/plan context, and logout
@@ -66,5 +67,7 @@ This first release deliberately supports **existing accounts only** and does not
 
 - Campaign alerts are managed in-app, but push notifications are not enabled yet.
 - Password resets open the secure website flow.
-- Email HTML is converted to readable plain text rather than executed in a WebView.
+- Email HTML is rendered inside Expo's isolated DOM web view. The embedded email is
+  sandboxed with scripts, forms, popups, and navigation disabled; links are exposed
+  separately through the validated native CTA list.
 - The app is configured for iPhone only (`supportsTablet: false`).

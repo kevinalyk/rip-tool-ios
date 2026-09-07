@@ -75,6 +75,11 @@ export type FeedDetail = FeedItem & {
   ctaLinks?: unknown[];
 };
 
+export type FeedShare = {
+  shareToken: string;
+  shareUrl: string;
+};
+
 export type FeedPage = {
   data: FeedItem[];
   pagination: {

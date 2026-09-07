@@ -8,6 +8,7 @@ import type {
   FeedFilterOptions,
   FeedFilters,
   FeedPage,
+  FeedShare,
   MessageType,
   UserProfile,
 } from '@/lib/api/types';
@@ -19,6 +20,8 @@ export const mobileApi = {
   feedFilters: () => apiRequest<FeedFilterOptions>('feed/filters'),
   feedItem: (id: string, type: MessageType) =>
     apiRequest<{ data: FeedDetail }>(`feed/${encodeURIComponent(id)}?type=${type}`),
+  shareFeedItem: (id: string, type: MessageType) =>
+    apiRequest<FeedShare>(`feed/${encodeURIComponent(id)}/share?type=${type}`, { method: 'POST' }),
   followedEntities: () => apiRequest<{ data: Entity[] }>('entities/followed'),
   followEntity: (id: string) =>
     apiRequest<{ following: true; alreadyFollowing: boolean }>(`entities/${encodeURIComponent(id)}/follow`, {

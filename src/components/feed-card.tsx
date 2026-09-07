@@ -44,12 +44,7 @@ export const FeedCard = memo(function FeedCard({ item, onPress }: FeedCardProps)
 
       <View style={styles.footer}>
         <Text style={[styles.date, { color: theme.textMuted }]}>{formatDate(item.dateReceived)}</Text>
-        {item.type === 'email' ? (
-          <View style={styles.rate}>
-            <View style={[styles.rateDot, { backgroundColor: item.inboxRate >= 80 ? theme.success : theme.warning }]} />
-            <Text style={[styles.date, { color: theme.textMuted }]}>{Math.round(item.inboxRate)}% inbox</Text>
-          </View>
-        ) : null}
+        <Ionicons name="chevron-forward" size={17} color={theme.textMuted} />
       </View>
     </Pressable>
   );
@@ -106,15 +101,5 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  rate: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  rateDot: {
-    borderRadius: 4,
-    height: 7,
-    width: 7,
   },
 });
