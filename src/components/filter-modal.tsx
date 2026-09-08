@@ -9,6 +9,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import type { FeedFilterOptions, FeedFilters, MessageFilter, SelectOption } from '@/lib/api/types';
 import { titleCase } from '@/lib/format';
+import { resolveDonationPlatformOptions } from '@/lib/select-options';
 
 type FilterModalProps = {
   visible: boolean;
@@ -35,15 +36,6 @@ const FALLBACK_MESSAGE_FILTERS: SelectOption[] = [
   { value: 'third_party', label: 'Third Party' },
   { value: 'house_file', label: 'House File' },
 ];
-const FALLBACK_DONATION_PLATFORMS: SelectOption[] = [
-  { value: 'winred', label: 'WinRed' },
-  { value: 'actblue', label: 'ActBlue' },
-  { value: 'anedot', label: 'Anedot' },
-  { value: 'psq', label: 'PSQ' },
-  { value: 'ngpvan', label: 'NGPVAN' },
-  { value: 'substack', label: 'Substack' },
-];
-
 function Chip({ label, selected, onPress }: ChipProps) {
   const theme = useAppTheme();
   return (
@@ -162,9 +154,10 @@ export function FilterModal({ visible, filters, options, onClose, onApply }: Fil
     .filter(Boolean);
   const entityTypes = options?.entityTypes?.length ? options.entityTypes : FALLBACK_ENTITY_TYPES;
   const messageFilters = options?.messageFilters?.length ? options.messageFilters : FALLBACK_MESSAGE_FILTERS;
-  const donationPlatforms = options?.donationPlatforms?.length
-    ? options.donationPlatforms
-    : FALLBACK_DONATION_PLATFORMS;
+  const donationPlatforms = useMemo(
+    () => resolveDonationPlatformOptions(options?.donationPlatforms),
+    [options?.donationPlatforms],
+  );
 
   const toggleMessageFilter = (value: MessageFilter) => {
     setDraft((current) => {
