@@ -12,7 +12,7 @@
     "scheme": "inboxgop",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.inboxgop.app",
+      "bundleIdentifier": "com.rip-tool.app",
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

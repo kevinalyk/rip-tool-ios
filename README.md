@@ -59,7 +59,7 @@ repository’s mobile integration suite.
 
 The app can be developed and run in the Simulator before Apple Developer enrollment finishes. A simulator-only EAS build also does not require Apple signing. Once the account is active:
 
-1. Confirm that the bundle identifier `com.inboxgop.app` is available and belongs to the correct Apple team.
+1. Confirm that the bundle identifier `com.rip-tool.app` belongs to the correct Apple team and matches the existing Inbox.GOP App Store Connect record.
 2. Create or sign in to an Expo account.
 3. Run `pnpm dlx eas-cli@latest login`.
 4. Run `pnpm dlx eas-cli@latest build:configure` and accept the existing iOS profiles in `eas.json`.
