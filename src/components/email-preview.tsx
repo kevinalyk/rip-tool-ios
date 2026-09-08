@@ -3,8 +3,12 @@
 import DOMPurify from 'dompurify';
 import { useEffect, useRef } from 'react';
 
+import type { CtaLink } from '@/lib/api/types';
+
 type EmailPreviewProps = {
   html: string;
+  links: CtaLink[];
+  openLink: (url: string) => Promise<void>;
   dom?: import('expo/dom').DOMProps;
 };
 
@@ -35,7 +39,6 @@ const interactiveAttributes = [
   'action',
   'download',
   'formaction',
-  'href',
   'ping',
   'srcdoc',
   'target',
@@ -56,18 +59,31 @@ const emailDocumentCss = `
   img { height: auto !important; max-width: 100% !important; }
   table { max-width: 100% !important; }
   a {
-    color: inherit !important;
-    cursor: default !important;
-    pointer-events: none !important;
-    text-decoration: none !important;
+    color: #2563eb !important;
+    cursor: pointer !important;
+    text-decoration: underline !important;
   }
+  a:not([href]) { color: inherit !important; cursor: default !important; text-decoration: none !important; }
 `;
 
-function sanitizeEmailHtml(html: string): string {
+function sanitizeEmailHtml(html: string, links: CtaLink[]): string {
   const parsed = new DOMParser().parseFromString(html, 'text/html');
   const headStyles = Array.from(parsed.head.querySelectorAll('style'))
     .map((style) => style.outerHTML)
     .join('');
+
+  const destinationsByCapturedUrl = new Map<string, string>();
+  for (const link of links) {
+    destinationsByCapturedUrl.set(link.url, link.url);
+    if (link.originalUrl) destinationsByCapturedUrl.set(link.originalUrl, link.url);
+  }
+
+  parsed.body.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
+    const capturedUrl = anchor.getAttribute('href')?.trim();
+    const destinationUrl = capturedUrl ? destinationsByCapturedUrl.get(capturedUrl) : undefined;
+    if (destinationUrl) anchor.setAttribute('href', destinationUrl);
+    else anchor.removeAttribute('href');
+  });
 
   return DOMPurify.sanitize(`${headStyles}${parsed.body.innerHTML}`, {
     ADD_TAGS: ['style'],
@@ -78,7 +94,7 @@ function sanitizeEmailHtml(html: string): string {
   });
 }
 
-export default function EmailPreview({ html }: EmailPreviewProps) {
+export default function EmailPreview({ html, links, openLink }: EmailPreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,8 +106,19 @@ export default function EmailPreview({ html }: EmailPreviewProps) {
     const content = document.createElement('div');
     style.textContent = emailDocumentCss;
     content.className = 'email-document';
-    content.innerHTML = sanitizeEmailHtml(html);
+    content.innerHTML = sanitizeEmailHtml(html, links);
     shadowRoot.replaceChildren(style, content);
+
+    const allowedDestinations = new Set(links.map((link) => link.url));
+    const handleLinkClick = (event: Event) => {
+      const anchor = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href]');
+      if (!anchor) return;
+
+      event.preventDefault();
+      const destinationUrl = anchor.getAttribute('href');
+      if (destinationUrl && allowedDestinations.has(destinationUrl)) void openLink(destinationUrl);
+    };
+    content.addEventListener('click', handleLinkClick);
 
     let animationFrame = 0;
     const fitToViewport = () => {
@@ -131,8 +158,9 @@ export default function EmailPreview({ html }: EmailPreviewProps) {
         image.removeEventListener('error', scheduleFit);
       });
       window.removeEventListener('resize', scheduleFit);
+      content.removeEventListener('click', handleLinkClick);
     };
-  }, [html]);
+  }, [html, links, openLink]);
 
   return (
     <main aria-label="Email preview" className="preview-shell">

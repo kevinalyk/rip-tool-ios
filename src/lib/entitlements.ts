@@ -2,6 +2,7 @@ import type { FeedFilters, MobileClientEntitlements, UserProfile } from '@/lib/a
 
 const FAIL_CLOSED_ENTITLEMENTS: MobileClientEntitlements = {
   canSearchAndFilterFeed: false,
+  canUseAlerts: false,
   feedHistoryHours: 3,
   followedEntityLimit: 0,
 };
@@ -20,6 +21,7 @@ export function getMobileEntitlements(user: UserProfile | null): MobileClientEnt
 
   return {
     canSearchAndFilterFeed: entitlements.canSearchAndFilterFeed === true,
+    canUseAlerts: entitlements.canUseAlerts === true,
     feedHistoryHours:
       historyHours === null ||
       (typeof historyHours === 'number' && Number.isFinite(historyHours) && historyHours >= 0)

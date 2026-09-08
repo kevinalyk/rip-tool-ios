@@ -43,20 +43,35 @@ export function stripHtml(value?: string | null): string {
     .trim();
 }
 
-export function extractCtaLinks(value?: unknown[]): CtaLink[] {
-  if (!Array.isArray(value)) return [];
+export function extractCtaLinks(value?: unknown): CtaLink[] {
+  let items = value;
+  if (typeof items === 'string') {
+    try {
+      items = JSON.parse(items) as unknown;
+    } catch {
+      items = [items];
+    }
+  }
 
-  return value.flatMap((item) => {
+  if (!Array.isArray(items)) return [];
+
+  return items.flatMap((item) => {
     if (typeof item === 'string' && isSafeHttpUrl(item)) return [{ url: item }];
     if (!item || typeof item !== 'object') return [];
 
     const record = item as Record<string, unknown>;
-    const candidate = record.url ?? record.href ?? record.link;
-    if (typeof candidate !== 'string' || !isSafeHttpUrl(candidate)) return [];
+    const originalUrl = record.url ?? record.href ?? record.link;
+    const finalUrl = record.finalUrl;
+    const safeOriginalUrl = typeof originalUrl === 'string' && isSafeHttpUrl(originalUrl) ? originalUrl : undefined;
+    const safeFinalUrl = typeof finalUrl === 'string' && isSafeHttpUrl(finalUrl) ? finalUrl : undefined;
+    const destinationUrl = safeFinalUrl ?? safeOriginalUrl;
+    if (!destinationUrl) return [];
 
     return [
       {
-        url: candidate,
+        url: destinationUrl,
+        originalUrl: safeOriginalUrl && safeOriginalUrl !== destinationUrl ? safeOriginalUrl : undefined,
+        finalUrl: safeFinalUrl,
         text: typeof record.text === 'string' ? record.text : undefined,
         label: typeof record.label === 'string' ? record.label : undefined,
       },

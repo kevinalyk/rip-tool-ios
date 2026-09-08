@@ -13,7 +13,7 @@ Native iPhone client for Inbox.GOP, built with Expo and React Native. It uses th
 - Message detail with a sandboxed visual email preview, native SMS presentation,
   safe external CTA links, and the iPhone share sheet
 - Followed entities with follow-limit error handling
-- Campaign alert creation, listing, and deletion
+- Paid-plan CI alert creation, listing, deletion, and real-time iPhone push notifications
 - Profile, organization/plan context, and logout
 - Offline and recoverable error states
 - Light and dark appearance, safe-area layout, and 44pt-or-larger controls
@@ -65,7 +65,7 @@ The app can be developed and run in the Simulator before Apple Developer enrollm
 4. Run `pnpm dlx eas-cli@latest build:configure` and accept the existing iOS profiles in `eas.json`.
 5. Optionally create a simulator build with `pnpm dlx eas-cli@latest build --platform ios --profile simulator`.
 6. Create a physical-device development build with `pnpm dlx eas-cli@latest build --platform ios --profile development`.
-7. Create the TestFlight build with `pnpm dlx eas-cli@latest build --platform ios --profile production`.
+7. Create the TestFlight build with `pnpm dlx eas-cli@latest build --platform ios --profile production`. When EAS asks, allow it to create or reuse the Apple Push Notifications key for this bundle identifier.
 8. Submit it with `pnpm dlx eas-cli@latest submit --platform ios`.
 
 Do not submit to App Review until the screenshots, privacy disclosures, support URL, demo-account instructions, and production acceptance tests are complete.
@@ -74,7 +74,7 @@ This first release deliberately supports **existing accounts only** and does not
 
 ## Intentional first-release boundaries
 
-- Campaign alerts are managed in-app, but push notifications are not enabled yet.
+- Remote push notifications require a physical iPhone and a newly compiled EAS/TestFlight build; the Simulator cannot validate delivery.
 - Password resets open the secure website flow.
 - Email HTML is sanitized and rendered inside an isolated shadow document in Expo's
   DOM web view. Scripts, forms, embedded frames, and navigation are removed; links

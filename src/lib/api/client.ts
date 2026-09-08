@@ -61,7 +61,7 @@ export async function hasStoredSession(): Promise<boolean> {
   return Boolean(await SecureStore.getItemAsync(REFRESH_TOKEN_KEY));
 }
 
-async function getDeviceId(): Promise<string> {
+export async function getDeviceId(): Promise<string> {
   const existing = await SecureStore.getItemAsync(DEVICE_ID_KEY);
   if (existing) return existing;
 

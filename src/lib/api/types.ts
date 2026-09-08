@@ -17,6 +17,7 @@ export type LoginUser = {
 
 export type MobileClientEntitlements = {
   canSearchAndFilterFeed: boolean;
+  canUseAlerts: boolean;
   feedHistoryHours: number | null;
   followedEntityLimit: number | null;
 };
@@ -73,6 +74,8 @@ export type FeedItem = {
 
 export type CtaLink = {
   url: string;
+  originalUrl?: string;
+  finalUrl?: string;
   text?: string;
   label?: string;
 };
@@ -80,7 +83,7 @@ export type CtaLink = {
 export type FeedDetail = FeedItem & {
   emailContent?: string | null;
   emailPreview?: string | null;
-  ctaLinks?: unknown[];
+  ctaLinks?: unknown;
 };
 
 export type FeedShare = {
@@ -114,7 +117,12 @@ export type FeedFilterOptions = {
 export type AlertFilterOptions = {
   states: string[];
   parties: SelectOption[];
-  offices: SelectOption[];
+  entityTypes: SelectOption[];
+  messageTypes: SelectOption[];
+  ownershipTypes: SelectOption[];
+  donationPlatforms: SelectOption[];
+  entities: FeedFilterEntity[];
+  tags: SelectOption[];
 };
 
 export type FeedFilterEntity = Pick<Entity, 'id' | 'name' | 'type' | 'party' | 'state'> & {
@@ -142,14 +150,29 @@ export type AlertSubscription = {
   name: string;
   party: string | null;
   state: string | null;
-  office: string | null;
+  search: string | null;
+  entityIds: string[];
+  entityType: string | null;
+  messageTypes: MessageType[];
+  ownershipTypes: ('house_file' | 'third_party')[];
+  donationPlatform: string | null;
+  subscriptionsOnly: boolean;
+  tag: string | null;
+  enabled: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
 export type CreateAlertInput = {
   name: string;
+  search?: string;
+  entityIds?: string[];
   party?: string;
   state?: string;
-  office?: string;
+  entityType?: string;
+  messageTypes?: MessageType[];
+  ownershipTypes?: ('house_file' | 'third_party')[];
+  donationPlatform?: string;
+  subscriptionsOnly?: boolean;
+  tag?: string;
 };

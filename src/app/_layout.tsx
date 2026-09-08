@@ -9,6 +9,7 @@ import { ContentState } from '@/components/content-state';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
+import { addNotificationResponseListener, getLastNotificationTarget } from '@/lib/notifications';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -19,6 +20,20 @@ function RootNavigator() {
 
   useEffect(() => {
     if (state !== 'loading') void SplashScreen.hideAsync();
+  }, [state]);
+
+  useEffect(() => {
+    const subscription = addNotificationResponseListener((feedItemId, messageType) => {
+      router.push({ pathname: '/feed/[id]', params: { id: feedItemId, type: messageType } });
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (state !== 'authenticated') return;
+    void getLastNotificationTarget().then((target) => {
+      if (target) router.push({ pathname: '/feed/[id]', params: { id: target.feedItemId, type: target.messageType } });
+    });
   }, [state]);
 
   if (state === 'loading') return <View style={{ flex: 1, backgroundColor: theme.background }} />;

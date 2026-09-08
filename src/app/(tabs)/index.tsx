@@ -29,17 +29,12 @@ export default function FeedScreen() {
   const theme = useAppTheme();
   const queryClient = useQueryClient();
   const { user, refreshProfile } = useAuth();
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchDraft, setSearchDraft] = useState('');
+  const [submittedSearch, setSubmittedSearch] = useState('');
   const [filters, setFilters] = useState<FeedFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const entitlements = useMemo(() => getMobileEntitlements(user), [user]);
   const canSearchAndFilter = entitlements.canSearchAndFilterFeed;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   useEffect(() => {
     if (canSearchAndFilter) return;
@@ -47,8 +42,8 @@ export default function FeedScreen() {
     queryClient.removeQueries({ queryKey: ['feed-filters'] });
 
     const clearLockedFilters = setTimeout(() => {
-      setSearch('');
-      setDebouncedSearch('');
+      setSearchDraft('');
+      setSubmittedSearch('');
       setFilters({});
       setShowFilters(false);
     }, 0);
@@ -59,10 +54,10 @@ export default function FeedScreen() {
   const effectiveFilters = useMemo(
     () =>
       sanitizeFeedFiltersForEntitlements(
-        { ...filters, search: debouncedSearch || undefined },
+        { ...filters, search: submittedSearch || undefined },
         entitlements,
       ),
-    [debouncedSearch, entitlements, filters],
+    [entitlements, filters, submittedSearch],
   );
   const activeFilterCount = [
     filters.entityIds?.length,
@@ -164,15 +159,22 @@ export default function FeedScreen() {
                     <TextInput
                       accessibilityLabel="Search feed"
                       autoCorrect={false}
-                      onChangeText={setSearch}
+                      onChangeText={setSearchDraft}
+                      onSubmitEditing={() => setSubmittedSearch(searchDraft.trim())}
                       placeholder="Search sender or subject"
                       placeholderTextColor={theme.textMuted}
                       returnKeyType="search"
                       style={[styles.searchInput, { color: theme.text }]}
-                      value={search}
+                      value={searchDraft}
                     />
-                    {search ? (
-                      <Pressable accessibilityLabel="Clear search" hitSlop={8} onPress={() => setSearch('')}>
+                    {searchDraft || submittedSearch ? (
+                      <Pressable
+                        accessibilityLabel="Clear search"
+                        hitSlop={8}
+                        onPress={() => {
+                          setSearchDraft('');
+                          setSubmittedSearch('');
+                        }}>
                         <Ionicons name="close-circle" size={20} color={theme.textMuted} />
                       </Pressable>
                     ) : null}
@@ -217,8 +219,14 @@ export default function FeedScreen() {
                 ? 'Try clearing your search or changing the active filters.'
                 : `No messages were captured in your current ${entitlements.feedHistoryHours ?? 3}-hour window.`
             }
-            actionLabel={canSearchAndFilter && (activeFilterCount || search) ? 'Clear filters' : undefined}
-            onAction={canSearchAndFilter && (activeFilterCount || search) ? () => { setSearch(''); setFilters({}); } : undefined}
+            actionLabel={canSearchAndFilter && (activeFilterCount || searchDraft || submittedSearch) ? 'Clear filters' : undefined}
+            onAction={canSearchAndFilter && (activeFilterCount || searchDraft || submittedSearch)
+              ? () => {
+                  setSearchDraft('');
+                  setSubmittedSearch('');
+                  setFilters({});
+                }
+              : undefined}
           />
         }
         ListFooterComponent={
