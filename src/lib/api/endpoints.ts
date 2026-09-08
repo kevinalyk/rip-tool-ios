@@ -36,4 +36,11 @@ export const mobileApi = {
     apiRequest<{ data: AlertSubscription }>('alerts', { method: 'POST', body: JSON.stringify(input) }),
   deleteAlert: (id: string) =>
     apiRequest<{ ok: true }>(`alerts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  registerPushToken: (input: { expoPushToken: string; deviceId: string; platform: 'ios' }) =>
+    apiRequest<{ data: { id: string; enabled: boolean; lastSeenAt: string } }>('push-token', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  unregisterPushToken: (deviceId: string) =>
+    apiRequest<{ ok: true }>('push-token', { method: 'DELETE', body: JSON.stringify({ deviceId }) }),
 };

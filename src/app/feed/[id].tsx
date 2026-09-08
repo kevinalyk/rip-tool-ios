@@ -177,6 +177,10 @@ export default function FeedDetailScreen() {
             <View style={[styles.emailCard, shadows.card, { borderColor: theme.border }]}>
               <EmailPreview
                 html={item.emailContent}
+                links={links}
+                openLink={async (url) => {
+                  await Linking.openURL(url);
+                }}
                 dom={{
                   automaticallyAdjustContentInsets: false,
                   bounces: false,

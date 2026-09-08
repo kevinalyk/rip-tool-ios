@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/client';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { UserProfile } from '@/lib/api/types';
+import { unregisterPushNotifications } from '@/lib/notifications';
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
 
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     try {
+      await unregisterPushNotifications().catch(() => undefined);
       await logout();
     } finally {
       becomeSignedOut();
