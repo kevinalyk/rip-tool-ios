@@ -1,6 +1,7 @@
 import { apiRequest } from '@/lib/api/client';
 import { buildFeedQuery } from '@/lib/api/query';
 import type {
+  AlertFilterOptions,
   AlertSubscription,
   CreateAlertInput,
   Entity,
@@ -30,6 +31,7 @@ export const mobileApi = {
   unfollowEntity: (id: string) =>
     apiRequest<{ following: false }>(`entities/${encodeURIComponent(id)}/follow`, { method: 'DELETE' }),
   alerts: () => apiRequest<{ data: AlertSubscription[] }>('alerts'),
+  alertOptions: () => apiRequest<AlertFilterOptions>('alerts/options'),
   createAlert: (input: CreateAlertInput) =>
     apiRequest<{ data: AlertSubscription }>('alerts', { method: 'POST', body: JSON.stringify(input) }),
   deleteAlert: (id: string) =>

@@ -15,6 +15,12 @@ export type LoginUser = {
   role: string;
 };
 
+export type MobileClientEntitlements = {
+  canSearchAndFilterFeed: boolean;
+  feedHistoryHours: number | null;
+  followedEntityLimit: number | null;
+};
+
 export type ClientProfile = {
   id: string;
   name: string;
@@ -23,6 +29,8 @@ export type ClientProfile = {
   subscriptionStatus: string;
   hasCompetitiveInsights: boolean;
   trialExpiresAt: string | null;
+  // Optional during the backend-first rollout; missing capabilities fail closed.
+  entitlements?: MobileClientEntitlements;
 };
 
 export type UserProfile = LoginUser & {
@@ -97,11 +105,16 @@ export type SelectOption = {
 export type FeedFilterOptions = {
   states: string[];
   parties: SelectOption[];
-  offices: SelectOption[];
   entityTypes?: SelectOption[];
   messageFilters?: SelectOption[];
   donationPlatforms?: SelectOption[];
   entities?: FeedFilterEntity[];
+};
+
+export type AlertFilterOptions = {
+  states: string[];
+  parties: SelectOption[];
+  offices: SelectOption[];
 };
 
 export type FeedFilterEntity = Pick<Entity, 'id' | 'name' | 'type' | 'party' | 'state'> & {

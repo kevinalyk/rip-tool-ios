@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import {
   clearSession,
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<AuthState>('loading');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const lastAppState = useRef(AppState.currentState);
 
   const becomeSignedOut = useCallback(() => {
     setUser(null);
@@ -123,6 +125,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const profile = await mobileApi.me();
     setUser(profile);
   }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const returningToForeground =
+        /inactive|background/.test(lastAppState.current) && nextState === 'active';
+      lastAppState.current = nextState;
+
+      if (returningToForeground && state === 'authenticated') {
+        // Plan changes made on the web should update the native controls promptly.
+        // A transient network failure is non-fatal; the API remains authoritative.
+        void refreshProfile().catch(() => undefined);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refreshProfile, state]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ state, user, error, signIn, signOut, retry, refreshProfile }),

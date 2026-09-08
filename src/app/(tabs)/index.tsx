@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -22,22 +22,47 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { FeedFilters, FeedItem } from '@/lib/api/types';
+import { getMobileEntitlements, sanitizeFeedFiltersForEntitlements } from '@/lib/entitlements';
+import { useAuth } from '@/providers/auth-provider';
 
 export default function FeedScreen() {
   const theme = useAppTheme();
+  const queryClient = useQueryClient();
+  const { user, refreshProfile } = useAuth();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filters, setFilters] = useState<FeedFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const entitlements = useMemo(() => getMobileEntitlements(user), [user]);
+  const canSearchAndFilter = entitlements.canSearchAndFilterFeed;
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    if (canSearchAndFilter) return;
+
+    queryClient.removeQueries({ queryKey: ['feed-filters'] });
+
+    const clearLockedFilters = setTimeout(() => {
+      setSearch('');
+      setDebouncedSearch('');
+      setFilters({});
+      setShowFilters(false);
+    }, 0);
+
+    return () => clearTimeout(clearLockedFilters);
+  }, [canSearchAndFilter, queryClient]);
+
   const effectiveFilters = useMemo(
-    () => ({ ...filters, search: debouncedSearch || undefined }),
-    [debouncedSearch, filters],
+    () =>
+      sanitizeFeedFiltersForEntitlements(
+        { ...filters, search: debouncedSearch || undefined },
+        entitlements,
+      ),
+    [debouncedSearch, entitlements, filters],
   );
   const activeFilterCount = [
     filters.entityIds?.length,
@@ -50,7 +75,11 @@ export default function FeedScreen() {
     filters.subscriptionsOnly,
   ].filter(Boolean).length;
 
-  const filterOptions = useQuery({ queryKey: ['feed-filters'], queryFn: mobileApi.feedFilters });
+  const filterOptions = useQuery({
+    queryKey: ['feed-filters'],
+    queryFn: mobileApi.feedFilters,
+    enabled: canSearchAndFilter,
+  });
   const feed = useInfiniteQuery({
     queryKey: ['feed', effectiveFilters],
     queryFn: ({ pageParam }) => mobileApi.feed(effectiveFilters, pageParam),
@@ -110,7 +139,13 @@ export default function FeedScreen() {
           if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();
         }}
         onEndReachedThreshold={0.45}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void feed.refetch()} tintColor={theme.red} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void Promise.allSettled([feed.refetch(), refreshProfile()])}
+            tintColor={theme.red}
+          />
+        }
         renderItem={renderFeedItem}
         updateCellsBatchingPeriod={50}
         windowSize={7}
@@ -121,49 +156,69 @@ export default function FeedScreen() {
             <Text style={[styles.title, { color: theme.text }]}>Latest messages</Text>
             <Text style={[styles.subtitle, { color: theme.textMuted }]}>Track the political email and SMS activity that matters now.</Text>
 
-            <View style={styles.searchRow}>
-              <View style={[styles.searchBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <Ionicons name="search" size={20} color={theme.textMuted} />
-                <TextInput
-                  accessibilityLabel="Search feed"
-                  autoCorrect={false}
-                  onChangeText={setSearch}
-                  placeholder="Search sender or subject"
-                  placeholderTextColor={theme.textMuted}
-                  returnKeyType="search"
-                  style={[styles.searchInput, { color: theme.text }]}
-                  value={search}
-                />
-                {search ? (
-                  <Pressable accessibilityLabel="Clear search" hitSlop={8} onPress={() => setSearch('')}>
-                    <Ionicons name="close-circle" size={20} color={theme.textMuted} />
+            {canSearchAndFilter ? (
+              <>
+                <View style={styles.searchRow}>
+                  <View style={[styles.searchBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                    <Ionicons name="search" size={20} color={theme.textMuted} />
+                    <TextInput
+                      accessibilityLabel="Search feed"
+                      autoCorrect={false}
+                      onChangeText={setSearch}
+                      placeholder="Search sender or subject"
+                      placeholderTextColor={theme.textMuted}
+                      returnKeyType="search"
+                      style={[styles.searchInput, { color: theme.text }]}
+                      value={search}
+                    />
+                    {search ? (
+                      <Pressable accessibilityLabel="Clear search" hitSlop={8} onPress={() => setSearch('')}>
+                        <Ionicons name="close-circle" size={20} color={theme.textMuted} />
+                      </Pressable>
+                    ) : null}
+                  </View>
+
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filters${activeFilterCount ? `, ${activeFilterCount} active` : ''}`}
+                    onPress={() => setShowFilters(true)}
+                    style={({ pressed }) => [
+                      styles.filterButton,
+                      { backgroundColor: activeFilterCount ? theme.navy : theme.surface, borderColor: theme.border, opacity: pressed ? 0.72 : 1 },
+                    ]}>
+                    <Ionicons name="options-outline" size={22} color={activeFilterCount ? '#FFFFFF' : theme.text} />
+                    {activeFilterCount ? <Text style={styles.filterCount}>{activeFilterCount}</Text> : null}
                   </Pressable>
-                ) : null}
+                </View>
+
+                <ActiveFilterBar filters={filters} options={filterOptions.data} onChange={setFilters} />
+              </>
+            ) : (
+              <View style={[styles.accessCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <View style={[styles.accessIcon, { backgroundColor: `${theme.red}12` }]}>
+                  <Ionicons name="lock-closed-outline" size={20} color={theme.red} />
+                </View>
+                <View style={styles.accessCopy}>
+                  <Text style={[styles.accessTitle, { color: theme.text }]}>Starter feed access</Text>
+                  <Text style={[styles.accessText, { color: theme.textMuted }]}>
+                    Your plan includes the latest {entitlements.feedHistoryHours ?? 3} hours. Search and filters are available on paid plans.
+                  </Text>
+                </View>
               </View>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Filters${activeFilterCount ? `, ${activeFilterCount} active` : ''}`}
-                onPress={() => setShowFilters(true)}
-                style={({ pressed }) => [
-                  styles.filterButton,
-                  { backgroundColor: activeFilterCount ? theme.navy : theme.surface, borderColor: theme.border, opacity: pressed ? 0.72 : 1 },
-                ]}>
-                <Ionicons name="options-outline" size={22} color={activeFilterCount ? '#FFFFFF' : theme.text} />
-                {activeFilterCount ? <Text style={styles.filterCount}>{activeFilterCount}</Text> : null}
-              </Pressable>
-            </View>
-
-            <ActiveFilterBar filters={filters} options={filterOptions.data} onChange={setFilters} />
+            )}
           </View>
         }
         ListEmptyComponent={
           <ContentState
             mode="empty"
-            title="No messages match"
-            message="Try clearing your search or changing the active filters."
-            actionLabel={activeFilterCount || search ? 'Clear filters' : undefined}
-            onAction={activeFilterCount || search ? () => { setSearch(''); setFilters({}); } : undefined}
+            title={canSearchAndFilter ? 'No messages match' : 'No recent messages'}
+            message={
+              canSearchAndFilter
+                ? 'Try clearing your search or changing the active filters.'
+                : `No messages were captured in your current ${entitlements.feedHistoryHours ?? 3}-hour window.`
+            }
+            actionLabel={canSearchAndFilter && (activeFilterCount || search) ? 'Clear filters' : undefined}
+            onAction={canSearchAndFilter && (activeFilterCount || search) ? () => { setSearch(''); setFilters({}); } : undefined}
           />
         }
         ListFooterComponent={
@@ -171,7 +226,7 @@ export default function FeedScreen() {
         }
       />
 
-      {showFilters ? (
+      {canSearchAndFilter && showFilters ? (
         <FilterModal
           visible
           filters={effectiveFilters}
@@ -230,6 +285,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 48,
   },
+  accessCard: {
+    alignItems: 'center',
+    borderCurve: 'continuous',
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xl,
+    padding: spacing.md,
+  },
+  accessIcon: {
+    alignItems: 'center',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  accessCopy: { flex: 1 },
+  accessTitle: { fontSize: 14, fontWeight: '800' },
+  accessText: { fontSize: 12, lineHeight: 18, marginTop: 2 },
   filterButton: {
     alignItems: 'center',
     borderRadius: radii.md,

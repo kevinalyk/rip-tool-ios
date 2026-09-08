@@ -7,7 +7,9 @@ Native iPhone client for Inbox.GOP, built with Expo and React Native. It uses th
 - Existing-account login and web password-reset handoff
 - Rotating mobile session with the refresh token stored in iOS secure storage
 - Automatic single-flight token refresh and forced-session handling
-- Cursor-paginated email/SMS feed with search and filters
+- Plan-aware, cursor-paginated email/SMS feed: Starter accounts receive the
+  latest three hours without search or filters; paid plans receive their
+  server-configured history, filter, and follow capabilities
 - Message detail with a sandboxed visual email preview, native SMS presentation,
   safe external CTA links, and the iPhone share sheet
 - Followed entities with follow-limit error handling
@@ -34,6 +36,10 @@ If `EXPO_PUBLIC_API_BASE_URL` is not set, release builds use:
 https://app.rip-tool.com/api/mobile/v1
 ```
 
+Deploy the entitlement-aware mobile API before distributing this app revision.
+Older app builds ignore the new capability fields, while this build deliberately
+falls back to Starter restrictions if a server does not provide them.
+
 Do not put `MOBILE_JWT_SECRET`, `DATABASE_URL`, passwords, refresh tokens, or Vercel bypass credentials in this repository or in an `EXPO_PUBLIC_*` variable. Everything prefixed `EXPO_PUBLIC_` is included in the client application.
 
 ## Verification
@@ -44,7 +50,10 @@ pnpm exec expo-doctor
 pnpm run export:ios
 ```
 
-The pure unit tests cover feed query serialization, safe CTA-link handling, and plain-text conversion. Authentication and API behavior are additionally verified by the server repository’s mobile integration suite.
+The pure unit tests cover feed query serialization, fail-closed entitlement
+handling, follow limits, safe CTA-link handling, and plain-text conversion.
+Authentication and API behavior are additionally verified by the server
+repository’s mobile integration suite.
 
 ## TestFlight and App Store setup
 

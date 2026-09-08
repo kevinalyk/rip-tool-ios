@@ -20,13 +20,17 @@ import { PrimaryButton } from '@/components/primary-button';
 import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { MessageType } from '@/lib/api/types';
+import { getMobileEntitlements } from '@/lib/entitlements';
 import { extractCtaLinks, formatDate, stripHtml, titleCase } from '@/lib/format';
+import { useAuth } from '@/providers/auth-provider';
 
 type DetailSection = 'preview' | 'links';
 
 export default function FeedDetailScreen() {
   const theme = useAppTheme();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const entitlements = getMobileEntitlements(user);
   const params = useLocalSearchParams<{ id: string; type?: string }>();
   const [section, setSection] = useState<DetailSection>('preview');
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -40,6 +44,11 @@ export default function FeedDetailScreen() {
   const followed = useQuery({ queryKey: ['followed-entities'], queryFn: mobileApi.followedEntities });
   const item = detail.data?.data;
   const isFollowing = Boolean(item?.entityId && followed.data?.data.some((entity) => entity.id === item.entityId));
+  const followedCount = followed.data?.data.length ?? 0;
+  const followLimitReached =
+    !isFollowing &&
+    entitlements.followedEntityLimit !== null &&
+    followedCount >= entitlements.followedEntityLimit;
 
   const toggleFollow = useMutation({
     mutationFn: async () => {
@@ -141,11 +150,16 @@ export default function FeedDetailScreen() {
 
           {item.entity ? (
             <View style={[styles.followRow, { borderTopColor: theme.border }]}>
-              <Text style={[styles.followHint, { color: theme.textMuted }]}>Keep {entityName} prioritized in your feed.</Text>
+              <Text style={[styles.followHint, { color: theme.textMuted }]}>
+                {followLimitReached
+                  ? 'Your organization has reached its plan’s follow limit.'
+                  : `Keep ${entityName} prioritized in your feed.`}
+              </Text>
               <PrimaryButton
-                label={isFollowing ? 'Following' : 'Follow'}
+                label={isFollowing ? 'Following' : followLimitReached ? 'Limit reached' : 'Follow'}
                 variant={isFollowing ? 'secondary' : 'primary'}
                 loading={toggleFollow.isPending}
+                disabled={followLimitReached}
                 onPress={() => toggleFollow.mutate()}
                 style={styles.followButton}
               />
