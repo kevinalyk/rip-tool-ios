@@ -1,9 +1,12 @@
 {
   "expo": {
     "name": "Inbox.GOP",
+    "owner": "kevinlyk",
     "slug": "inbox-gop-ios",
     "version": "1.0.0",
-    "platforms": ["ios"],
+    "platforms": [
+      "ios"
+    ],
     "orientation": "portrait",
     "icon": "./assets/images/inbox-gop-app-icon.png",
     "scheme": "inboxgop",
@@ -37,6 +40,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "55bfb477-2cbb-40eb-8be3-867ee0c9f46a"
+      }
     }
   }
 }
