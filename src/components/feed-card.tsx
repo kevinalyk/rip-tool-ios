@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
 import type { FeedItem } from '@/lib/api/types';
+import { getPartyBadgeTone } from '@/lib/entity-metadata';
 import { formatDate, titleCase } from '@/lib/format';
 
 type FeedCardProps = {
@@ -15,6 +16,13 @@ type FeedCardProps = {
 export const FeedCard = memo(function FeedCard({ item, onPress }: FeedCardProps) {
   const theme = useAppTheme();
   const entityName = item.entity?.name || item.senderName || 'Unknown sender';
+  const partyTone = getPartyBadgeTone(item.entity?.party);
+  const partyColors = {
+    republican: { background: `${theme.red}18`, border: `${theme.red}40`, text: theme.red },
+    democrat: { background: `${theme.blue}18`, border: `${theme.blue}40`, text: theme.blue },
+    independent: { background: '#7C3AED18', border: '#7C3AED40', text: '#7C3AED' },
+    neutral: { background: theme.surfaceMuted, border: theme.border, text: theme.textMuted },
+  }[partyTone];
 
   return (
     <Pressable
@@ -30,9 +38,24 @@ export const FeedCard = memo(function FeedCard({ item, onPress }: FeedCardProps)
         <EntityAvatar name={entityName} imageUrl={item.entity?.imageUrl} />
         <View style={styles.senderBlock}>
           <Text numberOfLines={1} style={[styles.sender, { color: theme.text }]}>{entityName}</Text>
-          <Text numberOfLines={1} style={[styles.meta, { color: theme.textMuted }]}>
-            {item.entity ? [titleCase(item.entity.party), item.entity.state].filter(Boolean).join(' · ') : item.senderEmail}
-          </Text>
+          {item.entity ? (
+            <View style={styles.metadataRow}>
+              {item.entity.party ? (
+                <View style={[styles.metadataPill, { backgroundColor: partyColors.background, borderColor: partyColors.border }]}>
+                  <Text numberOfLines={1} style={[styles.metadataPillText, { color: partyColors.text }]}>
+                    {titleCase(item.entity.party)}
+                  </Text>
+                </View>
+              ) : null}
+              {item.entity.state ? (
+                <View style={[styles.metadataPill, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
+                  <Text style={[styles.metadataPillText, { color: theme.textMuted }]}>{item.entity.state}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <Text numberOfLines={1} style={[styles.meta, { color: theme.textMuted }]}>{item.senderEmail}</Text>
+          )}
         </View>
         <View style={[styles.typeBadge, { backgroundColor: item.type === 'sms' ? `${theme.blue}20` : `${theme.red}18` }]}>
           <Ionicons name={item.type === 'sms' ? 'chatbubble-outline' : 'mail-outline'} size={14} color={item.type === 'sms' ? theme.blue : theme.red} />
@@ -74,6 +97,24 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: 12,
     marginTop: 2,
+  },
+  metadataRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginTop: 5,
+  },
+  metadataPill: {
+    borderRadius: radii.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    maxWidth: '100%',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  metadataPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 13,
   },
   typeBadge: {
     alignItems: 'center',

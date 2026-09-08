@@ -13,6 +13,7 @@ import { mobileApi } from '@/lib/api/endpoints';
 import type { CreateAlertInput, SelectOption } from '@/lib/api/types';
 import { getMobileEntitlements } from '@/lib/entitlements';
 import { titleCase } from '@/lib/format';
+import { resolveDonationPlatformOptions } from '@/lib/select-options';
 import { useAuth } from '@/providers/auth-provider';
 
 function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
@@ -64,6 +65,10 @@ export default function NewAlertScreen() {
   const entityOptions = useMemo<FilterSelectionOption[]>(() => (options.data?.entities || []).map((entity) => ({ value: entity.id, label: entity.name, detail: [titleCase(entity.type), titleCase(entity.party), entity.state].filter(Boolean).join(' · '), isFollowing: entity.isFollowing })), [options.data?.entities]);
   const stateOptions = useMemo<FilterSelectionOption[]>(() => (options.data?.states || []).map((value) => ({ value, label: value })), [options.data?.states]);
   const tagOptions = useMemo<FilterSelectionOption[]>(() => (options.data?.tags || []).map((value) => ({ value: value.value, label: value.label })), [options.data?.tags]);
+  const donationPlatformOptions = useMemo(
+    () => resolveDonationPlatformOptions(options.data?.donationPlatforms),
+    [options.data?.donationPlatforms],
+  );
   const selectedEntityNames = entityIds.map((id) => options.data?.entities.find((entity) => entity.id === id)?.name).filter(Boolean);
 
   if (!canUseAlerts) return <ContentState mode="empty" title="Paid plan required" message="Real-time CI alerts are available on paid plans." actionLabel="Close" onAction={() => router.back()} />;
@@ -94,7 +99,7 @@ export default function NewAlertScreen() {
         <SelectionRow icon="map-outline" title="State" value={state || 'All states'} onPress={() => setPicker('state')} />
         <MultiChoice title="Message type" helper="Leave both unselected to receive either type." values={messageTypes} options={options.data.messageTypes} onChange={setMessageTypes} />
         <MultiChoice title="Audience source" helper="Leave both unselected for House File and Third Party." values={ownershipTypes} options={options.data.ownershipTypes} onChange={setOwnershipTypes} />
-        <SingleChoice title="Donation platform" value={donationPlatform} options={options.data.donationPlatforms} onChange={setDonationPlatform} />
+        <SingleChoice title="Donation platform" value={donationPlatform} options={donationPlatformOptions} onChange={setDonationPlatform} />
         {tagOptions.length ? <SelectionRow icon="pricetag-outline" title="Entity tag" value={tag || 'Any tag'} onPress={() => setPicker('tag')} /> : null}
 
         <View style={[styles.summary, { backgroundColor: `${theme.red}0D`, borderColor: `${theme.red}33` }]}><Ionicons name="information-circle-outline" size={21} color={theme.red} /><Text style={[styles.summaryText, { color: theme.textMuted }]}>{name.trim() ? 'Your alert will begin watching new messages as soon as it is created.' : 'Give your alert a short name to save it.'}</Text></View>
