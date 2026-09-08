@@ -9,11 +9,16 @@ import { PRODUCT_NAME } from '@/constants/branding';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { Entity } from '@/lib/api/types';
+import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
 import { titleCase } from '@/lib/format';
+import { useAuth } from '@/providers/auth-provider';
 
 export default function FollowingScreen() {
   const theme = useAppTheme();
   const queryClient = useQueryClient();
+  const { user, refreshProfile } = useAuth();
+  const entitlements = getMobileEntitlements(user);
+  const canAddFollows = canFollowNewEntities(entitlements);
   const followed = useQuery({ queryKey: ['followed-entities'], queryFn: mobileApi.followedEntities });
   const unfollow = useMutation({
     mutationFn: mobileApi.unfollowEntity,
@@ -64,20 +69,36 @@ export default function FollowingScreen() {
         data={entities}
         keyExtractor={(entity) => entity.id}
         refreshControl={
-          <RefreshControl refreshing={followed.isRefetching} onRefresh={() => void followed.refetch()} tintColor={theme.red} />
+          <RefreshControl
+            refreshing={followed.isRefetching}
+            onRefresh={() => void Promise.allSettled([followed.refetch(), refreshProfile()])}
+            tintColor={theme.red}
+          />
         }
         contentContainerStyle={[styles.content, entities.length === 0 && styles.emptyContent]}
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.text }]}>Following</Text>
             <Text style={[styles.subtitle, { color: theme.textMuted }]}>Your organization’s priority entities and campaigns.</Text>
+            {!canAddFollows ? (
+              <View style={[styles.accessNotice, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Ionicons name="lock-closed-outline" size={19} color={theme.red} />
+                <Text style={[styles.accessNoticeText, { color: theme.textMuted }]}>
+                  Following entities is available on paid plans. Existing follows can still be removed.
+                </Text>
+              </View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
           <ContentState
             mode="empty"
             title="No followed entities"
-            message="Open a message in the Feed and tap Follow to begin building your watchlist."
+            message={
+              canAddFollows
+                ? 'Open a message in the Feed and tap Follow to begin building your watchlist.'
+                : 'Your current plan does not include followed entities.'
+            }
           />
         }
         renderItem={({ item }) => {
@@ -117,6 +138,17 @@ const styles = StyleSheet.create({
   header: { marginBottom: spacing.xl },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.8 },
   subtitle: { fontSize: 15, lineHeight: 21, marginTop: spacing.sm },
+  accessNotice: {
+    alignItems: 'center',
+    borderCurve: 'continuous',
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+  },
+  accessNoticeText: { flex: 1, fontSize: 12, lineHeight: 18 },
   card: {
     alignItems: 'center',
     borderRadius: radii.lg,

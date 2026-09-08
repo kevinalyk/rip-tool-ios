@@ -55,7 +55,7 @@ function Choice({ label, selected, onPress }: { label: string; selected: boolean
 export default function NewAlertScreen() {
   const theme = useAppTheme();
   const queryClient = useQueryClient();
-  const options = useQuery({ queryKey: ['feed-filters'], queryFn: mobileApi.feedFilters });
+  const options = useQuery({ queryKey: ['alert-options'], queryFn: mobileApi.alertOptions });
   const [name, setName] = useState('');
   const [party, setParty] = useState<string>();
   const [state, setState] = useState<string>();
