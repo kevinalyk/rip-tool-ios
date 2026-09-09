@@ -60,6 +60,56 @@ export type Entity = {
   office?: string | null;
 };
 
+export type DirectoryEntity = Entity & {
+  description: string | null;
+  imageUrl: string | null;
+  office: string | null;
+  isFollowing: boolean;
+  counts: {
+    emails: number;
+    sms: number;
+    total: number;
+  };
+};
+
+export type DirectoryFilters = {
+  search?: string;
+  party?: string;
+  state?: string;
+  entityType?: string;
+};
+
+export type DirectoryPage = {
+  data: DirectoryEntity[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    totalCount: number;
+  };
+};
+
+export type DirectoryOptions = {
+  states: string[];
+  parties: SelectOption[];
+  entityTypes: SelectOption[];
+};
+
+export type DirectoryRecentMessage = {
+  id: string;
+  type: MessageType;
+  title: string;
+  sender: string;
+  dateReceived: string;
+};
+
+export type DirectoryEntityDetail = DirectoryEntity & {
+  bio: string | null;
+  ballotpediaUrl: string | null;
+  emailSenders: string[];
+  smsSenders: string[];
+  recentMessages: DirectoryRecentMessage[];
+};
+
 export type FeedItem = {
   id: string;
   type: MessageType;

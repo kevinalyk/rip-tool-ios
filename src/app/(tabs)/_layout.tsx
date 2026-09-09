@@ -34,10 +34,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="alerts"
+        name="directory"
         options={{
-          title: 'Alerts',
-          tabBarIcon: ({ color, size }) => <Ionicons name="notifications-outline" color={color} size={size} />,
+          title: 'Directory',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

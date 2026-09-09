@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildFeedQuery } from '../api/query';
+import { buildDirectoryQuery, buildFeedQuery } from '../api/query';
 
 test('buildFeedQuery omits empty values and trims search text', () => {
   assert.equal(buildFeedQuery({ search: '  senate race  ' }), '?search=senate+race');
@@ -58,4 +58,15 @@ test('buildFeedQuery serializes SMS and house-file selections', () => {
     buildFeedQuery({ messageFilters: ['sms', 'house_file'] }),
     '?messageType=sms&houseFileOnly=true',
   );
+});
+
+test('buildDirectoryQuery serializes submitted search, filters, and cursor', () => {
+  assert.equal(
+    buildDirectoryQuery(
+      { search: '  Ann Wagner ', party: 'republican', state: 'MO', entityType: 'candidate' },
+      'next-page',
+    ),
+    '?search=Ann+Wagner&party=republican&state=MO&entityType=candidate&cursor=next-page',
+  );
+  assert.equal(buildDirectoryQuery({ search: '   ' }), '');
 });
