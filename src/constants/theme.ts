@@ -10,6 +10,7 @@ const brand = {
 export const themes = {
   light: {
     ...brand,
+    democrat: '#1559B7',
     background: '#F4F6F8',
     surface: '#FFFFFF',
     surfaceRaised: '#FFFFFF',
@@ -25,6 +26,7 @@ export const themes = {
   },
   dark: {
     ...brand,
+    democrat: '#60A5FA',
     background: '#09151D',
     surface: '#10232E',
     surfaceRaised: '#17303D',

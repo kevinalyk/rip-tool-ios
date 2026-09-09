@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { ContentState } from '@/components/content-state';
@@ -104,7 +105,15 @@ export default function FollowingScreen() {
         renderItem={({ item }) => {
           const pending = unfollow.isPending && unfollow.variables === item.id;
           return (
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Pressable
+              accessibilityHint="Opens this entity in the Directory"
+              accessibilityLabel={`View ${item.name}`}
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: '/directory/[id]', params: { id: item.id } })}
+              style={({ pressed }) => [
+                styles.card,
+                { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.72 : 1 },
+              ]}>
               <EntityAvatar name={item.name} imageUrl={item.imageUrl} size={50} />
               <View style={styles.entityInfo}>
                 <Text numberOfLines={2} style={[styles.entityName, { color: theme.text }]}>{item.name}</Text>
@@ -116,11 +125,14 @@ export default function FollowingScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Unfollow ${item.name}`}
                 disabled={pending}
-                onPress={() => confirmUnfollow(item)}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  confirmUnfollow(item);
+                }}
                 style={({ pressed }) => [styles.unfollowButton, { opacity: pressed || pending ? 0.5 : 1 }]}>
                 <Ionicons name={pending ? 'ellipsis-horizontal' : 'star'} size={22} color={theme.red} />
               </Pressable>
-            </View>
+            </Pressable>
           );
         }}
       />

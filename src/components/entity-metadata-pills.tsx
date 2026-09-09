@@ -15,7 +15,7 @@ export function EntityMetadataPills({ party, state, type }: EntityMetadataPillsP
   const partyTone = getPartyBadgeTone(party);
   const colors = {
     republican: { background: `${theme.red}18`, border: `${theme.red}40`, text: theme.red },
-    democrat: { background: `${theme.blue}18`, border: `${theme.blue}40`, text: theme.blue },
+    democrat: { background: `${theme.democrat}18`, border: `${theme.democrat}40`, text: theme.democrat },
     independent: { background: '#7C3AED18', border: '#7C3AED40', text: '#7C3AED' },
     neutral: { background: theme.surfaceMuted, border: theme.border, text: theme.textMuted },
   }[partyTone];
