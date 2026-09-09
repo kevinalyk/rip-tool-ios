@@ -1,9 +1,13 @@
 import { apiRequest } from '@/lib/api/client';
-import { buildFeedQuery } from '@/lib/api/query';
+import { buildDirectoryQuery, buildFeedQuery } from '@/lib/api/query';
 import type {
   AlertFilterOptions,
   AlertSubscription,
   CreateAlertInput,
+  DirectoryEntityDetail,
+  DirectoryFilters,
+  DirectoryOptions,
+  DirectoryPage,
   Entity,
   FeedDetail,
   FeedFilterOptions,
@@ -30,6 +34,11 @@ export const mobileApi = {
     }),
   unfollowEntity: (id: string) =>
     apiRequest<{ following: false }>(`entities/${encodeURIComponent(id)}/follow`, { method: 'DELETE' }),
+  directory: (filters: DirectoryFilters, cursor?: string | null) =>
+    apiRequest<DirectoryPage>(`entities${buildDirectoryQuery(filters, cursor)}`),
+  directoryOptions: () => apiRequest<DirectoryOptions>('entities/options'),
+  directoryEntity: (id: string) =>
+    apiRequest<{ data: DirectoryEntityDetail }>(`entities/${encodeURIComponent(id)}`),
   alerts: () => apiRequest<{ data: AlertSubscription[] }>('alerts'),
   alertOptions: () => apiRequest<AlertFilterOptions>('alerts/options'),
   createAlert: (input: CreateAlertInput) =>
