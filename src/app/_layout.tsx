@@ -9,6 +9,7 @@ import { ContentState } from '@/components/content-state';
 import { FaceIdGate } from '@/components/face-id-gate';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
+import { AppearanceProvider } from '@/providers/appearance-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
 import { addNotificationResponseListener, getLastNotificationTarget } from '@/lib/notifications';
 
@@ -86,7 +87,7 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
+function ThemedRootLayout() {
   const scheme = useColorScheme();
   const colors = themes[scheme === 'dark' ? 'dark' : 'light'];
   const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -111,5 +112,13 @@ export default function RootLayout() {
         </AuthProvider>
       </AppQueryProvider>
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppearanceProvider>
+      <ThemedRootLayout />
+    </AppearanceProvider>
   );
 }

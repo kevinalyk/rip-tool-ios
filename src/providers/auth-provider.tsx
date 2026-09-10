@@ -17,7 +17,6 @@ import {
   faceIdErrorMessage,
   getFaceIdAvailability,
   isFaceIdEnabled,
-  setFaceIdEnabled,
 } from '@/lib/face-id';
 import { unregisterPushNotifications } from '@/lib/notifications';
 
@@ -28,7 +27,7 @@ type AuthContextValue = {
   state: AuthState;
   user: UserProfile | null;
   error: string | null;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   retry: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -150,12 +149,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [bootstrap]);
 
   const continueWithPassword = useCallback(async () => {
-    await Promise.all([clearSession(), setFaceIdEnabled(false)]);
+    // Keep the refresh token and Face ID preference available while showing the
+    // password screen. This enables a safe "Sign in with Face ID" return path.
+    // Explicit Sign out still revokes and clears the saved session through logout().
     becomeSignedOut();
   }, [becomeSignedOut]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    await login(email, password);
+  const signIn = useCallback(async (email: string, password: string, rememberMe = true) => {
+    // If the password screen was opened from the Face ID gate, revoke that old
+    // session before replacing it with a newly authenticated one.
+    if (await hasStoredSession()) {
+      await logout().catch(() => clearSession());
+    }
+    await login(email, password, rememberMe);
     try {
       const profile = await mobileApi.me();
       setUser(profile);

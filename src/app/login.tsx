@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -19,18 +20,48 @@ import { PrimaryButton } from '@/components/primary-button';
 import { PRODUCT_NAME } from '@/constants/branding';
 import { PASSWORD_HELP_URL } from '@/constants/links';
 import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
-import { ApiError } from '@/lib/api/client';
+import { ApiError, hasStoredSession } from '@/lib/api/client';
+import {
+  authenticateWithFaceId,
+  faceIdErrorMessage,
+  getFaceIdAvailability,
+  isFaceIdEnabled,
+  setFaceIdEnabled,
+} from '@/lib/face-id';
+import type { FaceIdAvailability } from '@/lib/face-id-policy';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function LoginScreen() {
   const theme = useAppTheme();
-  const { signIn } = useAuth();
+  const { signIn, unlockWithFaceId } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiresReset, setRequiresReset] = useState(false);
+  const [faceIdSignInAvailable, setFaceIdSignInAvailable] = useState(false);
+  const [faceIdAvailability, setFaceIdAvailability] = useState<FaceIdAvailability>('unavailable');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [enableFaceId, setEnableFaceId] = useState(false);
+  const [checkingFaceId, setCheckingFaceId] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([hasStoredSession(), isFaceIdEnabled(), getFaceIdAvailability()])
+      .then(([hasSession, enabled, availability]) => {
+        if (!active) return;
+        setFaceIdAvailability(availability);
+        setFaceIdSignInAvailable(hasSession && enabled && availability === 'available');
+        setEnableFaceId(enabled && availability === 'available');
+      })
+      .catch(() => {
+        if (active) setFaceIdSignInAvailable(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSignIn = async () => {
     Keyboard.dismiss();
@@ -38,7 +69,12 @@ export default function LoginScreen() {
     setRequiresReset(false);
     setSubmitting(true);
     try {
-      await signIn(email, password);
+      await signIn(email, password, rememberMe);
+      try {
+        await setFaceIdEnabled(rememberMe && enableFaceId);
+      } catch {
+        Alert.alert('Signed in', 'Your Face ID preference could not be saved. You can try again from Profile.');
+      }
     } catch (signInError) {
       if (signInError instanceof ApiError && signInError.code === 'PASSWORD_RESET_REQUIRED') {
         setRequiresReset(true);
@@ -47,6 +83,45 @@ export default function LoginScreen() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleFaceIdPreference = async () => {
+    if (checkingFaceId) return;
+    if (enableFaceId) {
+      setEnableFaceId(false);
+      return;
+    }
+
+    if (faceIdAvailability !== 'available') {
+      Alert.alert(
+        faceIdAvailability === 'not-enrolled' ? 'Set up Face ID first' : 'Face ID unavailable',
+        faceIdAvailability === 'not-enrolled'
+          ? 'Set up Face ID in your iPhone Settings, then return here.'
+          : 'Face ID is not available on this iPhone.',
+      );
+      return;
+    }
+
+    setCheckingFaceId(true);
+    try {
+      const result = await authenticateWithFaceId();
+      if (!result.success) {
+        const message = faceIdErrorMessage(result);
+        if (message) Alert.alert('Face ID was not enabled', message);
+        return;
+      }
+      setRememberMe(true);
+      setEnableFaceId(true);
+    } finally {
+      setCheckingFaceId(false);
+    }
+  };
+
+  const toggleRememberMe = () => {
+    setRememberMe((current) => {
+      if (current) setEnableFaceId(false);
+      return !current;
+    });
   };
 
   const canSubmit = email.trim().length > 3 && password.length > 0;
@@ -111,6 +186,41 @@ export default function LoginScreen() {
               </View>
             </View>
 
+            <View style={styles.signInOptions}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: rememberMe }}
+                onPress={toggleRememberMe}
+                style={styles.optionRow}>
+                <Ionicons
+                  name={rememberMe ? 'checkbox' : 'square-outline'}
+                  size={23}
+                  color={rememberMe ? theme.red : theme.textMuted}
+                />
+                <View style={styles.optionCopy}>
+                  <Text style={[styles.optionLabel, { color: theme.text }]}>Remember me</Text>
+                  <Text style={[styles.optionDetail, { color: theme.textMuted }]}>Stay signed in on this iPhone.</Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: enableFaceId, disabled: faceIdAvailability === 'unavailable' }}
+                disabled={checkingFaceId}
+                onPress={() => void handleFaceIdPreference()}
+                style={({ pressed }) => [styles.optionRow, { opacity: pressed || checkingFaceId ? 0.6 : 1 }]}>
+                <Ionicons
+                  name={enableFaceId ? 'checkbox' : 'square-outline'}
+                  size={23}
+                  color={enableFaceId ? theme.red : theme.textMuted}
+                />
+                <View style={styles.optionCopy}>
+                  <Text style={[styles.optionLabel, { color: theme.text }]}>Use Face ID next time</Text>
+                  <Text style={[styles.optionDetail, { color: theme.textMuted }]}>Requires Remember me.</Text>
+                </View>
+              </Pressable>
+            </View>
+
             {error ? (
               <View style={[styles.errorBox, { backgroundColor: `${theme.danger}12` }]} accessibilityRole="alert">
                 <Ionicons name="alert-circle-outline" color={theme.danger} size={20} />
@@ -119,6 +229,21 @@ export default function LoginScreen() {
             ) : null}
 
             <PrimaryButton label="Sign in" onPress={() => void handleSignIn()} loading={submitting} disabled={!canSubmit} />
+
+            {faceIdSignInAvailable ? (
+              <>
+                <View style={styles.orRow}>
+                  <View style={[styles.orLine, { backgroundColor: theme.border }]} />
+                  <Text style={[styles.orText, { color: theme.textMuted }]}>OR</Text>
+                  <View style={[styles.orLine, { backgroundColor: theme.border }]} />
+                </View>
+                <PrimaryButton
+                  label="Sign in with Face ID"
+                  variant="secondary"
+                  onPress={() => void unlockWithFaceId()}
+                />
+              </>
+            ) : null}
 
             <Pressable
               accessibilityRole="link"
@@ -203,6 +328,14 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   errorText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  signInOptions: { gap: spacing.md },
+  optionRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md, minHeight: 44 },
+  optionCopy: { flex: 1, gap: 2 },
+  optionLabel: { fontSize: 15, fontWeight: '700' },
+  optionDetail: { fontSize: 13, lineHeight: 18 },
+  orRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth },
+  orText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
   linkButton: {
     alignItems: 'center',
     justifyContent: 'center',

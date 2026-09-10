@@ -14,6 +14,8 @@ const EXPIRY_BUFFER_MS = 30_000;
 
 let accessToken: string | null = null;
 let accessTokenExpiresAt = 0;
+let refreshToken: string | null = null;
+let rememberSession = false;
 let refreshPromise: Promise<boolean> | null = null;
 let sessionInvalidatedHandler: (() => void) | null = null;
 
@@ -44,16 +46,25 @@ function setAccessSession(session: Pick<LoginResponse, 'accessToken' | 'expiresI
   accessTokenExpiresAt = Date.now() + session.expiresIn * 1000;
 }
 
-async function persistSession(session: LoginResponse | RefreshResponse) {
+async function persistSession(session: LoginResponse | RefreshResponse, remember: boolean) {
+  if (remember) {
+    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, session.refreshToken, {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+    });
+  } else {
+    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+  }
+
   setAccessSession(session);
-  await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, session.refreshToken, {
-    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
-  });
+  refreshToken = session.refreshToken;
+  rememberSession = remember;
 }
 
 export async function clearSession() {
   accessToken = null;
   accessTokenExpiresAt = 0;
+  refreshToken = null;
+  rememberSession = false;
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
 }
 
@@ -118,7 +129,7 @@ async function publicRequest<T>(path: string, init: RequestInit): Promise<T> {
   return parseResponse<T>(await fetchWithTimeout(path, init));
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export async function login(email: string, password: string, remember = true): Promise<LoginResponse> {
   const session = await publicRequest<LoginResponse>('auth/login', {
     method: 'POST',
     body: JSON.stringify({
@@ -128,20 +139,24 @@ export async function login(email: string, password: string): Promise<LoginRespo
       deviceName: Device.deviceName || 'iPhone',
     }),
   });
-  await persistSession(session);
+  await persistSession(session, remember);
   return session;
 }
 
 async function performRefresh(): Promise<boolean> {
-  const storedRefreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-  if (!storedRefreshToken) return false;
+  let activeRefreshToken = refreshToken;
+  if (!activeRefreshToken) {
+    activeRefreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    rememberSession = Boolean(activeRefreshToken);
+  }
+  if (!activeRefreshToken) return false;
 
   try {
     const session = await publicRequest<RefreshResponse>('auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      body: JSON.stringify({ refreshToken: activeRefreshToken }),
     });
-    await persistSession(session);
+    await persistSession(session, rememberSession);
     return true;
   } catch (error) {
     if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
@@ -201,11 +216,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 export async function logout(): Promise<void> {
   try {
     const ready = await ensureAccessToken();
-    const storedRefreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-    if (ready && accessToken && storedRefreshToken) {
+    const activeRefreshToken = refreshToken || (await SecureStore.getItemAsync(REFRESH_TOKEN_KEY));
+    if (ready && accessToken && activeRefreshToken) {
       const response = await fetchWithTimeout('auth/logout', {
         method: 'POST',
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        body: JSON.stringify({ refreshToken: activeRefreshToken }),
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       await parseResponse<{ success: true }>(response);

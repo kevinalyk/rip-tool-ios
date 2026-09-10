@@ -11,6 +11,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { PRODUCT_NAME } from '@/constants/branding';
 import { PASSWORD_HELP_URL, PRIVACY_POLICY_URL, SUPPORT_EMAIL_URL } from '@/constants/links';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
+import type { AppearancePreference } from '@/lib/appearance';
 import { initials, titleCase } from '@/lib/format';
 import {
   authenticateWithFaceId,
@@ -21,6 +22,13 @@ import {
 } from '@/lib/face-id';
 import type { FaceIdAvailability } from '@/lib/face-id-policy';
 import { useAuth } from '@/providers/auth-provider';
+import { useAppearancePreference } from '@/providers/appearance-provider';
+
+const APPEARANCE_OPTIONS: { value: AppearancePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'system', label: 'System', icon: 'phone-portrait-outline' },
+  { value: 'light', label: 'Light', icon: 'sunny-outline' },
+  { value: 'dark', label: 'Dark', icon: 'moon-outline' },
+];
 
 function SettingsRow({
   icon,
@@ -58,11 +66,13 @@ function SettingsRow({
 export default function ProfileScreen() {
   const theme = useAppTheme();
   const { user, signOut, refreshProfile } = useAuth();
+  const { preference: appearancePreference, setPreference: setAppearancePreference } = useAppearancePreference();
   const [refreshing, setRefreshing] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [faceIdAvailability, setFaceIdAvailability] = useState<FaceIdAvailability>('unavailable');
   const [faceIdEnabled, setFaceIdEnabledState] = useState(false);
   const [updatingFaceId, setUpdatingFaceId] = useState(false);
+  const [updatingAppearance, setUpdatingAppearance] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -157,6 +167,18 @@ export default function ProfileScreen() {
     }
   };
 
+  const updateAppearance = async (preference: AppearancePreference) => {
+    if (updatingAppearance || preference === appearancePreference) return;
+    setUpdatingAppearance(true);
+    try {
+      await setAppearancePreference(preference);
+    } catch (appearanceError) {
+      Alert.alert('Couldn’t update appearance', appearanceError instanceof Error ? appearanceError.message : 'Please try again.');
+    } finally {
+      setUpdatingAppearance(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
       <OfflineBanner />
@@ -200,7 +222,7 @@ export default function ProfileScreen() {
               <Text style={[styles.rowLabel, { color: theme.text }]}>Face ID</Text>
               <Text style={[styles.securityDetail, { color: theme.textMuted }]}>
                 {faceIdAvailability === 'available'
-                  ? 'Require Face ID when restoring your saved session.'
+                  ? 'Unlock your saved session with Face ID. Signing out completely still requires your password next time.'
                   : faceIdAvailability === 'not-enrolled'
                     ? 'Set up Face ID in iPhone Settings first.'
                     : 'Not available on this iPhone.'}
@@ -215,6 +237,32 @@ export default function ProfileScreen() {
               value={faceIdEnabled}
             />
           </View>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>APPEARANCE</Text>
+          <View style={[styles.appearanceControl, { backgroundColor: theme.surfaceMuted }]}>
+            {APPEARANCE_OPTIONS.map((option) => {
+              const selected = appearancePreference === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected, disabled: updatingAppearance }}
+                  disabled={updatingAppearance}
+                  onPress={() => void updateAppearance(option.value)}
+                  style={({ pressed }) => [
+                    styles.appearanceOption,
+                    selected && { backgroundColor: theme.surface },
+                    { opacity: pressed ? 0.65 : 1 },
+                  ]}>
+                  <Ionicons name={option.icon} size={18} color={selected ? theme.red : theme.textMuted} />
+                  <Text style={[styles.appearanceLabel, { color: selected ? theme.text : theme.textMuted }]}>{option.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={[styles.appearanceDetail, { color: theme.textMuted }]}>System follows your iPhone’s current appearance.</Text>
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -282,6 +330,10 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: 14, maxWidth: 140, textAlign: 'right' },
   securityCopy: { flex: 1, gap: 3, paddingVertical: spacing.sm },
   securityDetail: { fontSize: 12, lineHeight: 17 },
+  appearanceControl: { borderRadius: radii.md, flexDirection: 'row', gap: 3, marginBottom: spacing.sm, padding: 3 },
+  appearanceOption: { alignItems: 'center', borderCurve: 'continuous', borderRadius: radii.sm, flex: 1, flexDirection: 'row', gap: 5, justifyContent: 'center', minHeight: 44 },
+  appearanceLabel: { fontSize: 13, fontWeight: '700' },
+  appearanceDetail: { fontSize: 12, lineHeight: 17, paddingBottom: spacing.lg },
   divider: { height: StyleSheet.hairlineWidth, marginLeft: 46 },
   version: { fontSize: 12, textAlign: 'center' },
 });
