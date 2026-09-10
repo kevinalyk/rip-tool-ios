@@ -36,6 +36,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Inbox.GOP to use Face ID to unlock your saved session."
+        }
+      ],
       "expo-notifications"
     ],
     "experiments": {

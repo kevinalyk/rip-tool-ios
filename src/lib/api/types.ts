@@ -141,6 +141,28 @@ export type FeedShare = {
   shareUrl: string;
 };
 
+export type AnnouncementSummary = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  imageUrl: string | null;
+  publishedAt: string;
+  updatedAt: string;
+};
+
+export type AnnouncementDetail = AnnouncementSummary & {
+  body: string;
+};
+
+export type AnnouncementPage = {
+  data: AnnouncementSummary[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+};
+
 export type FeedPage = {
   data: FeedItem[];
   pagination: {

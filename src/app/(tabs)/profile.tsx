@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
-import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OfflineBanner } from '@/components/offline-banner';
@@ -11,6 +12,14 @@ import { PRODUCT_NAME } from '@/constants/branding';
 import { PASSWORD_HELP_URL, PRIVACY_POLICY_URL, SUPPORT_EMAIL_URL } from '@/constants/links';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { initials, titleCase } from '@/lib/format';
+import {
+  authenticateWithFaceId,
+  faceIdErrorMessage,
+  getFaceIdAvailability,
+  isFaceIdEnabled,
+  setFaceIdEnabled,
+} from '@/lib/face-id';
+import type { FaceIdAvailability } from '@/lib/face-id-policy';
 import { useAuth } from '@/providers/auth-provider';
 
 function SettingsRow({
@@ -51,6 +60,25 @@ export default function ProfileScreen() {
   const { user, signOut, refreshProfile } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [faceIdAvailability, setFaceIdAvailability] = useState<FaceIdAvailability>('unavailable');
+  const [faceIdEnabled, setFaceIdEnabledState] = useState(false);
+  const [updatingFaceId, setUpdatingFaceId] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([getFaceIdAvailability(), isFaceIdEnabled()])
+      .then(([availability, enabled]) => {
+        if (!active) return;
+        setFaceIdAvailability(availability);
+        setFaceIdEnabledState(enabled && availability === 'available');
+      })
+      .catch(() => {
+        if (active) setFaceIdAvailability('unavailable');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (!user) return null;
 
@@ -87,6 +115,48 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const updateFaceId = async (enabled: boolean) => {
+    if (updatingFaceId) return;
+    setUpdatingFaceId(true);
+
+    try {
+      if (!enabled) {
+        await setFaceIdEnabled(false);
+        setFaceIdEnabledState(false);
+        return;
+      }
+
+      const availability = await getFaceIdAvailability();
+      setFaceIdAvailability(availability);
+      if (availability !== 'available') {
+        Alert.alert(
+          availability === 'not-enrolled' ? 'Set up Face ID first' : 'Face ID unavailable',
+          availability === 'not-enrolled'
+            ? 'Set up Face ID in your iPhone Settings, then return here to enable it.'
+            : 'This iPhone does not currently support Face ID for this app.',
+          availability === 'not-enrolled'
+            ? [{ text: 'Cancel', style: 'cancel' }, { text: 'Open Settings', onPress: () => void Linking.openSettings() }]
+            : [{ text: 'OK' }],
+        );
+        return;
+      }
+
+      const result = await authenticateWithFaceId();
+      if (!result.success) {
+        const message = faceIdErrorMessage(result);
+        if (message) Alert.alert('Face ID was not enabled', message);
+        return;
+      }
+
+      await setFaceIdEnabled(true);
+      setFaceIdEnabledState(true);
+    } catch (faceIdError) {
+      Alert.alert('Couldn’t update Face ID', faceIdError instanceof Error ? faceIdError.message : 'Please try again.');
+    } finally {
+      setUpdatingFaceId(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
       <OfflineBanner />
@@ -121,7 +191,36 @@ export default function ProfileScreen() {
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>SECURITY</Text>
+          <View style={styles.row}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.surfaceMuted }]}>
+              <Ionicons name="scan-outline" size={20} color={theme.navy} />
+            </View>
+            <View style={styles.securityCopy}>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>Face ID</Text>
+              <Text style={[styles.securityDetail, { color: theme.textMuted }]}>
+                {faceIdAvailability === 'available'
+                  ? 'Require Face ID when restoring your saved session.'
+                  : faceIdAvailability === 'not-enrolled'
+                    ? 'Set up Face ID in iPhone Settings first.'
+                    : 'Not available on this iPhone.'}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Use Face ID"
+              disabled={updatingFaceId || faceIdAvailability === 'unavailable'}
+              onValueChange={(enabled) => void updateFaceId(enabled)}
+              trackColor={{ false: theme.surfaceMuted, true: `${theme.red}80` }}
+              thumbColor={faceIdEnabled ? theme.red : undefined}
+              value={faceIdEnabled}
+            />
+          </View>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>HELP & LEGAL</Text>
+          <SettingsRow icon="megaphone-outline" label="What's New" onPress={() => router.push('/news')} />
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow icon="key-outline" label="Password help" onPress={() => void WebBrowser.openBrowserAsync(PASSWORD_HELP_URL)} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow icon="help-circle-outline" label="Support" onPress={() => void Linking.openURL(SUPPORT_EMAIL_URL)} />
@@ -181,6 +280,8 @@ const styles = StyleSheet.create({
   rowIcon: { alignItems: 'center', borderRadius: radii.sm, height: 34, justifyContent: 'center', width: 34 },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
   rowValue: { fontSize: 14, maxWidth: 140, textAlign: 'right' },
+  securityCopy: { flex: 1, gap: 3, paddingVertical: spacing.sm },
+  securityDetail: { fontSize: 12, lineHeight: 17 },
   divider: { height: StyleSheet.hairlineWidth, marginLeft: 46 },
   version: { fontSize: 12, textAlign: 'center' },
 });
