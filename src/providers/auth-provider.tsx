@@ -12,9 +12,17 @@ import {
 } from '@/lib/api/client';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { UserProfile } from '@/lib/api/types';
+import {
+  authenticateWithFaceId,
+  faceIdErrorMessage,
+  getFaceIdAvailability,
+  isFaceIdEnabled,
+  setFaceIdEnabled,
+} from '@/lib/face-id';
 import { unregisterPushNotifications } from '@/lib/notifications';
 
-type AuthState = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
+type AuthState = 'loading' | 'locked' | 'authenticated' | 'unauthenticated' | 'error';
+const FACE_ID_RELOCK_MS = 30_000;
 
 type AuthContextValue = {
   state: AuthState;
@@ -24,6 +32,8 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
   retry: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  unlockWithFaceId: () => Promise<void>;
+  continueWithPassword: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -40,6 +50,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const lastAppState = useRef(AppState.currentState);
+  const backgroundedAt = useRef<number | null>(null);
 
   const becomeSignedOut = useCallback(() => {
     setUser(null);
@@ -53,8 +64,33 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => setSessionInvalidatedHandler(null);
   }, [becomeSignedOut]);
 
-  const bootstrap = useCallback(async () => {
+  const bootstrap = useCallback(async (requireFaceId = false) => {
     try {
+      if (!(await hasStoredSession())) {
+        becomeSignedOut();
+        return;
+      }
+
+      if (requireFaceId && (await isFaceIdEnabled())) {
+        const availability = await getFaceIdAvailability();
+        if (availability !== 'available') {
+          setError(
+            availability === 'not-enrolled'
+              ? 'Face ID is not set up on this iPhone.'
+              : 'Face ID is not available on this iPhone.',
+          );
+          setState('locked');
+          return;
+        }
+
+        const result = await authenticateWithFaceId();
+        if (!result.success) {
+          setError(faceIdErrorMessage(result));
+          setState('locked');
+          return;
+        }
+      }
+
       const profile = await restoreStoredProfile();
       if (!profile) {
         becomeSignedOut();
@@ -70,36 +106,53 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [becomeSignedOut]);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function restore() {
-      try {
-        const profile = await restoreStoredProfile();
-        if (cancelled) return;
-        if (!profile) {
-          becomeSignedOut();
-          return;
-        }
-        setUser(profile);
-        setState('authenticated');
-      } catch (bootstrapError) {
-        if (cancelled) return;
-        setError(bootstrapError instanceof Error ? bootstrapError.message : 'Unable to restore your session.');
-        setState('error');
-      }
+      await bootstrap(true);
     }
 
     void restore();
-    return () => {
-      cancelled = true;
-    };
-  }, [becomeSignedOut]);
+  }, [bootstrap]);
 
   const retry = useCallback(async () => {
     setState('loading');
     setError(null);
-    await bootstrap();
+    await bootstrap(false);
   }, [bootstrap]);
+
+  const unlockWithFaceId = useCallback(async () => {
+    setState('loading');
+    setError(null);
+
+    try {
+      const availability = await getFaceIdAvailability();
+      if (availability !== 'available') {
+        setError(
+          availability === 'not-enrolled'
+            ? 'Face ID is not set up on this iPhone.'
+            : 'Face ID is not available on this iPhone.',
+        );
+        setState('locked');
+        return;
+      }
+
+      const result = await authenticateWithFaceId();
+      if (!result.success) {
+        setError(faceIdErrorMessage(result));
+        setState('locked');
+        return;
+      }
+
+      await bootstrap(false);
+    } catch (unlockError) {
+      setError(unlockError instanceof Error ? unlockError.message : 'Unable to use Face ID.');
+      setState('locked');
+    }
+  }, [bootstrap]);
+
+  const continueWithPassword = useCallback(async () => {
+    await Promise.all([clearSession(), setFaceIdEnabled(false)]);
+    becomeSignedOut();
+  }, [becomeSignedOut]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     await login(email, password);
@@ -132,21 +185,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const subscription = AppState.addEventListener('change', (nextState) => {
       const returningToForeground =
         /inactive|background/.test(lastAppState.current) && nextState === 'active';
+      if (nextState === 'inactive' || nextState === 'background') {
+        backgroundedAt.current ??= Date.now();
+      }
+
+      const timeAway = backgroundedAt.current ? Date.now() - backgroundedAt.current : 0;
+      if (nextState === 'active') backgroundedAt.current = null;
       lastAppState.current = nextState;
 
       if (returningToForeground && state === 'authenticated') {
-        // Plan changes made on the web should update the native controls promptly.
-        // A transient network failure is non-fatal; the API remains authoritative.
-        void refreshProfile().catch(() => undefined);
+        void (async () => {
+          if (timeAway >= FACE_ID_RELOCK_MS && (await isFaceIdEnabled())) {
+            await unlockWithFaceId();
+            return;
+          }
+
+          // Plan changes made on the web should update the native controls promptly.
+          // A transient network failure is non-fatal; the API remains authoritative.
+          await refreshProfile().catch(() => undefined);
+        })();
       }
     });
 
     return () => subscription.remove();
-  }, [refreshProfile, state]);
+  }, [refreshProfile, state, unlockWithFaceId]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ state, user, error, signIn, signOut, retry, refreshProfile }),
-    [error, refreshProfile, retry, signIn, signOut, state, user],
+    () => ({ state, user, error, signIn, signOut, retry, refreshProfile, unlockWithFaceId, continueWithPassword }),
+    [continueWithPassword, error, refreshProfile, retry, signIn, signOut, state, unlockWithFaceId, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

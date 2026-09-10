@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useColorScheme, View } from 'react-native';
 
 import { ContentState } from '@/components/content-state';
+import { FaceIdGate } from '@/components/face-id-gate';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
@@ -14,7 +15,7 @@ import { addNotificationResponseListener, getLastNotificationTarget } from '@/li
 void SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { state, error, retry } = useAuth();
+  const { state, error, retry, unlockWithFaceId, continueWithPassword } = useAuth();
   const scheme = useColorScheme();
   const theme = themes[scheme === 'dark' ? 'dark' : 'light'];
 
@@ -37,6 +38,16 @@ function RootNavigator() {
   }, [state]);
 
   if (state === 'loading') return <View style={{ flex: 1, backgroundColor: theme.background }} />;
+
+  if (state === 'locked') {
+    return (
+      <FaceIdGate
+        error={error}
+        onUnlock={() => void unlockWithFaceId()}
+        onUsePassword={() => void continueWithPassword()}
+      />
+    );
+  }
 
   if (state === 'error') {
     return (
