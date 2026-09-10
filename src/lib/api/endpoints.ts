@@ -3,6 +3,8 @@ import { buildDirectoryQuery, buildFeedQuery } from '@/lib/api/query';
 import type {
   AlertFilterOptions,
   AlertSubscription,
+  AnnouncementDetail,
+  AnnouncementPage,
   CreateAlertInput,
   DirectoryEntityDetail,
   DirectoryFilters,
@@ -52,4 +54,8 @@ export const mobileApi = {
     }),
   unregisterPushToken: (deviceId: string) =>
     apiRequest<{ ok: true }>('push-token', { method: 'DELETE', body: JSON.stringify({ deviceId }) }),
+  announcements: (cursor?: string | null) =>
+    apiRequest<AnnouncementPage>(`news${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
+  announcement: (slug: string) =>
+    apiRequest<{ data: AnnouncementDetail }>(`news/${encodeURIComponent(slug)}`),
 };

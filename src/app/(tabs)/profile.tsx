@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -218,6 +219,8 @@ export default function ProfileScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>HELP & LEGAL</Text>
+          <SettingsRow icon="megaphone-outline" label="What's New" onPress={() => router.push('/news')} />
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow icon="key-outline" label="Password help" onPress={() => void WebBrowser.openBrowserAsync(PASSWORD_HELP_URL)} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow icon="help-circle-outline" label="Support" onPress={() => void Linking.openURL(SUPPORT_EMAIL_URL)} />

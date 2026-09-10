@@ -79,6 +79,8 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="feed/[id]" options={{ title: 'Message' }} />
         <Stack.Screen name="directory/[id]" options={{ title: 'Entity profile' }} />
+        <Stack.Screen name="news/index" options={{ title: "What's New" }} />
+        <Stack.Screen name="news/[slug]" options={{ title: 'Update' }} />
       </Stack.Protected>
     </Stack>
   );
