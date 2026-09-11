@@ -29,6 +29,8 @@ const FALLBACK_ENTITY_TYPES: SelectOption[] = [
   { value: 'politician', label: 'Politicians' },
   { value: 'pac', label: 'PACs' },
   { value: 'organization', label: 'Organizations' },
+  { value: 'nonprofit', label: 'Nonprofits' },
+  { value: 'state_party', label: 'State Parties' },
 ];
 const FALLBACK_MESSAGE_FILTERS: SelectOption[] = [
   { value: 'email', label: 'Email' },

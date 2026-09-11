@@ -126,7 +126,7 @@ export default function DirectoryScreen() {
           <View style={styles.header}>
             <Text style={[styles.eyebrow, { color: theme.red }]}>POLITICAL DIRECTORY</Text>
             <Text style={[styles.title, { color: theme.text }]}>Find an entity</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Browse the candidates, committees, PACs, and organizations tracked by Inbox.GOP.</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Browse candidates, committees, PACs, nonprofits, state parties, and other organizations tracked by Inbox.GOP.</Text>
 
             <View style={styles.searchRow}>
               <View style={[styles.searchBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>

@@ -11,6 +11,8 @@ export const themes = {
   light: {
     ...brand,
     democrat: '#1559B7',
+    nonprofit: '#0E7490',
+    stateParty: '#4338CA',
     background: '#F4F6F8',
     surface: '#FFFFFF',
     surfaceRaised: '#FFFFFF',
@@ -27,6 +29,8 @@ export const themes = {
   dark: {
     ...brand,
     democrat: '#60A5FA',
+    nonprofit: '#67E8F9',
+    stateParty: '#A5B4FC',
     background: '#09151D',
     surface: '#10232E',
     surfaceRaised: '#17303D',

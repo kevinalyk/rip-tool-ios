@@ -1,4 +1,5 @@
 export type PartyBadgeTone = 'republican' | 'democrat' | 'independent' | 'neutral';
+export type EntityTypeBadgeTone = 'nonprofit' | 'stateParty' | 'neutral';
 
 export function getPartyBadgeTone(party?: string | null): PartyBadgeTone {
   const normalized = party?.trim().toLowerCase();
@@ -12,5 +13,12 @@ export function getPartyBadgeTone(party?: string | null): PartyBadgeTone {
   ) {
     return 'independent';
   }
+  return 'neutral';
+}
+
+export function getEntityTypeBadgeTone(type?: string | null): EntityTypeBadgeTone {
+  const normalized = type?.trim().toLowerCase().replace(/[ -]+/g, '_');
+  if (normalized === 'nonprofit' || normalized === 'foundation') return 'nonprofit';
+  if (normalized === 'state_party') return 'stateParty';
   return 'neutral';
 }
