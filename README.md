@@ -13,7 +13,8 @@ Native iPhone client for Inbox.GOP, built with Expo and React Native. It uses th
 - Message detail with a sandboxed visual email preview, native SMS presentation,
   safe external CTA links, and the iPhone share sheet
 - Followed entities with follow-limit error handling
-- Paid-plan CI alert creation, listing, deletion, and real-time iPhone push notifications
+- An explicit Following-screen toggle for real-time email and SMS push notifications
+  from every entity the user's organization follows
 - Profile, organization/plan context, and logout
 - Offline and recoverable error states
 - Light and dark appearance, safe-area layout, and 44pt-or-larger controls
@@ -36,7 +37,8 @@ If `EXPO_PUBLIC_API_BASE_URL` is not set, release builds use:
 https://app.rip-tool.com/api/mobile/v1
 ```
 
-Deploy the entitlement-aware mobile API before distributing this app revision.
+Deploy the entitlement-aware mobile API and apply its reviewed followed-notification
+preference migration before distributing this app revision.
 Older app builds ignore the new capability fields, while this build deliberately
 falls back to Starter restrictions if a server does not provide them.
 

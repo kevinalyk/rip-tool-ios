@@ -141,6 +141,12 @@ export type FeedShare = {
   shareUrl: string;
 };
 
+export type FollowingPushPreference = {
+  registered: boolean;
+  enabled: boolean;
+  lastSeenAt: string | null;
+};
+
 export type AnnouncementSummary = {
   id: string;
   slug: string;
