@@ -30,9 +30,14 @@ function getProjectId(): string {
   return projectId;
 }
 
-async function registerCurrentDevice(): Promise<void> {
+async function registerCurrentDevice(followingEnabled?: boolean): Promise<void> {
   const expoPushToken = (await Notifications.getExpoPushTokenAsync({ projectId: getProjectId() })).data;
-  await mobileApi.registerPushToken({ expoPushToken, deviceId: await getDeviceId(), platform: 'ios' });
+  await mobileApi.registerPushToken({
+    expoPushToken,
+    deviceId: await getDeviceId(),
+    platform: 'ios',
+    followingEnabled,
+  });
 }
 
 export async function enablePushNotifications(): Promise<PushPermissionState> {
@@ -48,6 +53,31 @@ export async function enablePushNotifications(): Promise<PushPermissionState> {
 
   await registerCurrentDevice();
   return 'granted';
+}
+
+export async function enableFollowingPushNotifications(): Promise<PushPermissionState> {
+  if (Platform.OS !== 'ios' || !Device.isDevice) return 'unavailable';
+
+  let permissions = await Notifications.getPermissionsAsync();
+  if (!permissions.granted) {
+    permissions = await Notifications.requestPermissionsAsync({
+      ios: { allowAlert: true, allowBadge: true, allowSound: true },
+    });
+  }
+  if (!permissions.granted) return 'denied';
+
+  await registerCurrentDevice(true);
+  return 'granted';
+}
+
+export async function disableFollowingPushNotifications(): Promise<void> {
+  await mobileApi.setFollowingPushPreference(await getDeviceId(), false);
+}
+
+export async function syncFollowingPushNotificationsIfEnabled(enabled: boolean): Promise<void> {
+  if (enabled && (await getPushPermissionState()) === 'granted') {
+    await registerCurrentDevice(true);
+  }
 }
 
 export async function syncPushNotificationsIfGranted(): Promise<void> {

@@ -16,6 +16,7 @@ import type {
   FeedFilters,
   FeedPage,
   FeedShare,
+  FollowingPushPreference,
   MessageType,
   UserProfile,
 } from '@/lib/api/types';
@@ -47,10 +48,22 @@ export const mobileApi = {
     apiRequest<{ data: AlertSubscription }>('alerts', { method: 'POST', body: JSON.stringify(input) }),
   deleteAlert: (id: string) =>
     apiRequest<{ ok: true }>(`alerts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  registerPushToken: (input: { expoPushToken: string; deviceId: string; platform: 'ios' }) =>
-    apiRequest<{ data: { id: string; enabled: boolean; lastSeenAt: string } }>('push-token', {
+  followingPushPreference: (deviceId: string) =>
+    apiRequest<{ data: FollowingPushPreference }>(`push-token?deviceId=${encodeURIComponent(deviceId)}`),
+  registerPushToken: (input: {
+    expoPushToken: string;
+    deviceId: string;
+    platform: 'ios';
+    followingEnabled?: boolean;
+  }) =>
+    apiRequest<{ data: { id: string; enabled: boolean; followingEnabled: boolean; lastSeenAt: string } }>('push-token', {
       method: 'POST',
       body: JSON.stringify(input),
+    }),
+  setFollowingPushPreference: (deviceId: string, followingEnabled: boolean) =>
+    apiRequest<{ data: FollowingPushPreference }>('push-token', {
+      method: 'PATCH',
+      body: JSON.stringify({ deviceId, followingEnabled }),
     }),
   unregisterPushToken: (deviceId: string) =>
     apiRequest<{ ok: true }>('push-token', { method: 'DELETE', body: JSON.stringify({ deviceId }) }),
