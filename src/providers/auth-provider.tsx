@@ -18,7 +18,7 @@ import {
   getFaceIdAvailability,
   isFaceIdEnabled,
 } from '@/lib/face-id';
-import { unregisterPushNotifications } from '@/lib/notifications';
+import { hydrateFollowingPushPreference, unregisterPushNotifications } from '@/lib/notifications';
 
 type AuthState = 'loading' | 'locked' | 'authenticated' | 'unauthenticated' | 'error';
 const FACE_ID_RELOCK_MS = 30_000;
@@ -96,6 +96,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
+      await hydrateFollowingPushPreference(profile.id);
       setUser(profile);
       setState('authenticated');
     } catch (bootstrapError) {
@@ -164,6 +165,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await login(email, password, rememberMe);
     try {
       const profile = await mobileApi.me();
+      await hydrateFollowingPushPreference(profile.id);
       setUser(profile);
       setState('authenticated');
       setError(null);

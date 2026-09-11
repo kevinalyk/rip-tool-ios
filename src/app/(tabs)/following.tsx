@@ -10,15 +10,14 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { PRODUCT_NAME } from '@/constants/branding';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
-import { getDeviceId } from '@/lib/api/client';
 import type { Entity } from '@/lib/api/types';
 import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
 import { titleCase } from '@/lib/format';
 import {
   disableFollowingPushNotifications,
   enableFollowingPushNotifications,
-  getPushPermissionState,
-  syncFollowingPushNotificationsIfEnabled,
+  getCachedFollowingPushPreference,
+  loadFollowingPushPreference,
 } from '@/lib/notifications';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -30,24 +29,19 @@ export default function FollowingScreen() {
   const canAddFollows = canFollowNewEntities(entitlements);
   const followed = useQuery({ queryKey: ['followed-entities'], queryFn: mobileApi.followedEntities });
   const followingNotifications = useQuery({
-    queryKey: ['following-push-preference'],
-    queryFn: async () => {
-      const [permission, response] = await Promise.all([
-        getPushPermissionState(),
-        getDeviceId().then(mobileApi.followingPushPreference),
-      ]);
-      await syncFollowingPushNotificationsIfEnabled(response.data.enabled);
-      return { permission, preference: response.data };
-    },
+    queryKey: ['following-push-preference', user?.id],
+    queryFn: () => loadFollowingPushPreference(user!.id),
+    enabled: Boolean(user),
+    initialData: () => user ? getCachedFollowingPushPreference(user.id) : undefined,
   });
   const refetchFollowingNotifications = followingNotifications.refetch;
   const updateNotifications = useMutation({
     mutationFn: async (enabled: boolean) => {
       if (!enabled) {
-        await disableFollowingPushNotifications();
+        await disableFollowingPushNotifications(user!.id);
         return;
       }
-      const permission = await enableFollowingPushNotifications();
+      const permission = await enableFollowingPushNotifications(user!.id);
       if (permission === 'denied') {
         Alert.alert(
           'Notifications are off',
