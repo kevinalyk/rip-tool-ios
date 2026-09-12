@@ -177,6 +177,14 @@ export type FeedPage = {
   };
 };
 
+export type SavedFeedView = {
+  id: string;
+  name: string;
+  filters: FeedFilters;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type SelectOption = {
   value: string;
   label: string;
