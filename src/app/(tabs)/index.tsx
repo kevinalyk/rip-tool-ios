@@ -19,9 +19,10 @@ import { ContentState } from '@/components/content-state';
 import { FeedCard } from '@/components/feed-card';
 import { FilterModal } from '@/components/filter-modal';
 import { OfflineBanner } from '@/components/offline-banner';
+import { SavedViewsModal } from '@/components/saved-views-modal';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
-import type { FeedFilters, FeedItem } from '@/lib/api/types';
+import type { FeedFilters, FeedItem, SavedFeedView } from '@/lib/api/types';
 import { getMobileEntitlements, sanitizeFeedFiltersForEntitlements } from '@/lib/entitlements';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -33,6 +34,7 @@ export default function FeedScreen() {
   const [submittedSearch, setSubmittedSearch] = useState('');
   const [filters, setFilters] = useState<FeedFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [showSavedViews, setShowSavedViews] = useState(false);
   const entitlements = useMemo(() => getMobileEntitlements(user), [user]);
   const canSearchAndFilter = entitlements.canSearchAndFilterFeed;
 
@@ -46,6 +48,7 @@ export default function FeedScreen() {
       setSubmittedSearch('');
       setFilters({});
       setShowFilters(false);
+      setShowSavedViews(false);
     }, 0);
 
     return () => clearTimeout(clearLockedFilters);
@@ -75,6 +78,11 @@ export default function FeedScreen() {
     queryFn: mobileApi.feedFilters,
     enabled: canSearchAndFilter,
   });
+  const savedViews = useQuery({
+    queryKey: ['feed-saved-views'],
+    queryFn: mobileApi.savedFeedViews,
+    enabled: canSearchAndFilter,
+  });
   const feed = useInfiniteQuery({
     queryKey: ['feed', effectiveFilters],
     queryFn: ({ pageParam }) => mobileApi.feed(effectiveFilters, pageParam),
@@ -94,6 +102,15 @@ export default function FeedScreen() {
     ({ item }: ListRenderItemInfo<FeedItem>) => <FeedCard item={item} onPress={openItem} />,
     [openItem],
   );
+
+  const applySavedView = useCallback((view: SavedFeedView) => {
+    const next = sanitizeFeedFiltersForEntitlements(view.filters, entitlements);
+    const search = next.search || '';
+    setSearchDraft(search);
+    setSubmittedSearch(search);
+    setFilters({ ...next, search: undefined });
+    setShowSavedViews(false);
+  }, [entitlements]);
 
   if (feed.isLoading) {
     return (
@@ -137,7 +154,7 @@ export default function FeedScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => void Promise.allSettled([feed.refetch(), refreshProfile()])}
+            onRefresh={() => void Promise.allSettled([feed.refetch(), savedViews.refetch(), refreshProfile()])}
             tintColor={theme.red}
           />
         }
@@ -193,6 +210,27 @@ export default function FeedScreen() {
                   </Pressable>
                 </View>
 
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Saved views${savedViews.data?.data.length ? `, ${savedViews.data.data.length} available` : ''}`}
+                  onPress={() => {
+                    setShowSavedViews(true);
+                    void savedViews.refetch();
+                  }}
+                  style={({ pressed }) => [
+                    styles.savedViewsButton,
+                    { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.68 : 1 },
+                  ]}>
+                  <Ionicons name="eye-outline" size={19} color={theme.red} />
+                  <Text style={[styles.savedViewsText, { color: theme.text }]}>Saved views</Text>
+                  {savedViews.data?.data.length ? (
+                    <View style={[styles.savedViewsCount, { backgroundColor: theme.surfaceMuted }]}>
+                      <Text style={[styles.savedViewsCountText, { color: theme.textMuted }]}>{savedViews.data.data.length}</Text>
+                    </View>
+                  ) : null}
+                  <Ionicons name="chevron-forward" size={17} color={theme.textMuted} />
+                </Pressable>
+
                 <ActiveFilterBar filters={filters} options={filterOptions.data} onChange={setFilters} />
               </>
             ) : (
@@ -241,6 +279,18 @@ export default function FeedScreen() {
           options={filterOptions.data}
           onClose={() => setShowFilters(false)}
           onApply={(nextFilters) => setFilters({ ...nextFilters, search: undefined })}
+        />
+      ) : null}
+
+      {canSearchAndFilter && showSavedViews ? (
+        <SavedViewsModal
+          visible
+          views={savedViews.data?.data || []}
+          loading={savedViews.isLoading}
+          error={savedViews.error instanceof Error ? savedViews.error.message : undefined}
+          onClose={() => setShowSavedViews(false)}
+          onRetry={() => void savedViews.refetch()}
+          onSelect={applySavedView}
         />
       ) : null}
     </View>
@@ -334,6 +384,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     top: 4,
   },
+  savedViewsButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderCurve: 'continuous',
+    borderRadius: radii.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+  },
+  savedViewsText: { fontSize: 13, fontWeight: '800' },
+  savedViewsCount: { borderRadius: radii.pill, minWidth: 22, paddingHorizontal: 6, paddingVertical: 2 },
+  savedViewsCountText: { fontSize: 11, fontVariant: ['tabular-nums'], fontWeight: '800', textAlign: 'center' },
   footerSpinner: { padding: spacing.xl },
   footerSpace: { height: spacing.lg },
 });

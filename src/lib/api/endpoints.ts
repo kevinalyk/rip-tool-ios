@@ -18,6 +18,7 @@ import type {
   FeedShare,
   FollowingPushPreference,
   MessageType,
+  SavedFeedView,
   UserProfile,
 } from '@/lib/api/types';
 
@@ -26,6 +27,7 @@ export const mobileApi = {
   feed: (filters: FeedFilters, cursor?: string | null) =>
     apiRequest<FeedPage>(`feed${buildFeedQuery(filters, cursor)}`),
   feedFilters: () => apiRequest<FeedFilterOptions>('feed/filters'),
+  savedFeedViews: () => apiRequest<{ data: SavedFeedView[] }>('feed/views'),
   feedItem: (id: string, type: MessageType) =>
     apiRequest<{ data: FeedDetail }>(`feed/${encodeURIComponent(id)}?type=${type}`),
   shareFeedItem: (id: string, type: MessageType) =>

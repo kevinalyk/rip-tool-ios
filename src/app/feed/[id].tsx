@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -124,11 +124,21 @@ export default function FeedDetailScreen() {
         contentContainerStyle={styles.content}>
         <View style={[styles.heroCard, shadows.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.senderRow}>
-            <EntityAvatar name={entityName} imageUrl={item.entity?.imageUrl} size={58} />
-            <View style={styles.senderInfo}>
-              <Text selectable style={[styles.sender, { color: theme.text }]}>{entityName}</Text>
-              {entityMeta ? <Text style={[styles.entityMetaText, { color: theme.textMuted }]}>{entityMeta}</Text> : null}
-            </View>
+            <Pressable
+              accessibilityRole={item.entityId ? 'link' : undefined}
+              accessibilityLabel={item.entityId ? `View ${entityName} profile` : undefined}
+              disabled={!item.entityId}
+              onPress={() => {
+                if (item.entityId) router.push({ pathname: '/directory/[id]', params: { id: item.entityId } });
+              }}
+              style={({ pressed }) => [styles.entityLink, { opacity: pressed ? 0.68 : 1 }]}>
+              <EntityAvatar name={entityName} imageUrl={item.entity?.imageUrl} size={58} />
+              <View style={styles.senderInfo}>
+                <Text selectable style={[styles.sender, { color: theme.text }]}>{entityName}</Text>
+                {entityMeta ? <Text style={[styles.entityMetaText, { color: theme.textMuted }]}>{entityMeta}</Text> : null}
+              </View>
+              {item.entityId ? <Ionicons name="chevron-forward" size={17} color={theme.textMuted} /> : null}
+            </Pressable>
             <View style={[styles.typeBadge, { backgroundColor: type === 'sms' ? `${theme.blue}20` : `${theme.red}16` }]}>
               <Ionicons name={type === 'sms' ? 'chatbubble-outline' : 'mail-outline'} size={17} color={type === 'sms' ? theme.blue : theme.red} />
               <Text style={[styles.typeText, { color: type === 'sms' ? theme.blue : theme.red }]}>{type === 'sms' ? 'SMS' : 'EMAIL'}</Text>
@@ -270,6 +280,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   senderRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  entityLink: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: spacing.md, minHeight: 58 },
   senderInfo: { flex: 1 },
   sender: { fontSize: 17, fontWeight: '800' },
   entityMetaText: { fontSize: 12, marginTop: 3 },
