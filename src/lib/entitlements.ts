@@ -3,7 +3,8 @@ import type { FeedFilters, MobileClientEntitlements, UserProfile } from '@/lib/a
 const FAIL_CLOSED_ENTITLEMENTS: MobileClientEntitlements = {
   canSearchAndFilterFeed: false,
   canUseAlerts: false,
-  feedHistoryHours: 3,
+  feedHistoryHours: 1,
+  feedDelayHours: 24,
   followedEntityLimit: 0,
 };
 
@@ -17,6 +18,7 @@ export function getMobileEntitlements(user: UserProfile | null): MobileClientEnt
   if (!entitlements) return FAIL_CLOSED_ENTITLEMENTS;
 
   const historyHours = entitlements.feedHistoryHours;
+  const delayHours = entitlements.feedDelayHours;
   const followedEntityLimit = entitlements.followedEntityLimit;
 
   return {
@@ -27,6 +29,13 @@ export function getMobileEntitlements(user: UserProfile | null): MobileClientEnt
       (typeof historyHours === 'number' && Number.isFinite(historyHours) && historyHours >= 0)
         ? historyHours
         : FAIL_CLOSED_ENTITLEMENTS.feedHistoryHours,
+    feedDelayHours:
+      typeof delayHours === 'number' &&
+      Number.isFinite(delayHours) &&
+      Number.isInteger(delayHours) &&
+      delayHours >= 0
+        ? delayHours
+        : FAIL_CLOSED_ENTITLEMENTS.feedDelayHours,
     followedEntityLimit:
       followedEntityLimit === null ||
       (typeof followedEntityLimit === 'number' &&

@@ -19,6 +19,7 @@ export type MobileClientEntitlements = {
   canSearchAndFilterFeed: boolean;
   canUseAlerts: boolean;
   feedHistoryHours: number | null;
+  feedDelayHours: number;
   followedEntityLimit: number | null;
 };
 
@@ -30,8 +31,8 @@ export type ClientProfile = {
   subscriptionStatus: string;
   hasCompetitiveInsights: boolean;
   trialExpiresAt: string | null;
-  // Optional during the backend-first rollout; missing capabilities fail closed.
-  entitlements?: MobileClientEntitlements;
+  // Optional/partial during backend-first rollouts; missing capabilities fail closed.
+  entitlements?: Partial<MobileClientEntitlements>;
 };
 
 export type UserProfile = LoginUser & {

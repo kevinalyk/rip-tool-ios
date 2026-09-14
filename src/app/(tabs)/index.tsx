@@ -37,6 +37,8 @@ export default function FeedScreen() {
   const [showSavedViews, setShowSavedViews] = useState(false);
   const entitlements = useMemo(() => getMobileEntitlements(user), [user]);
   const canSearchAndFilter = entitlements.canSearchAndFilterFeed;
+  const starterHistoryHours = entitlements.feedHistoryHours ?? 1;
+  const hasDelayedFeed = entitlements.feedDelayHours > 0;
 
   useEffect(() => {
     if (canSearchAndFilter) return;
@@ -165,8 +167,14 @@ export default function FeedScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={[styles.eyebrow, { color: theme.red }]}>COMPETITIVE INTELLIGENCE</Text>
-            <Text style={[styles.title, { color: theme.text }]}>Latest messages</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Track the political email and SMS activity that matters now.</Text>
+            <Text style={[styles.title, { color: theme.text }]}>
+              {hasDelayedFeed ? 'Delayed messages' : 'Latest messages'}
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              {hasDelayedFeed
+                ? `A ${starterHistoryHours}-hour snapshot from about ${entitlements.feedDelayHours} hours ago.`
+                : 'Track the political email and SMS activity that matters now.'}
+            </Text>
 
             {canSearchAndFilter ? (
               <>
@@ -241,7 +249,7 @@ export default function FeedScreen() {
                 <View style={styles.accessCopy}>
                   <Text style={[styles.accessTitle, { color: theme.text }]}>Starter feed access</Text>
                   <Text style={[styles.accessText, { color: theme.textMuted }]}>
-                    Your plan includes the latest {entitlements.feedHistoryHours ?? 3} hours. Search and filters are available on paid plans.
+                    Your plan includes a {starterHistoryHours}-hour window delayed by {entitlements.feedDelayHours} hours, so this isn’t live data. Search and filters are available on paid plans.
                   </Text>
                 </View>
               </View>
@@ -251,11 +259,11 @@ export default function FeedScreen() {
         ListEmptyComponent={
           <ContentState
             mode="empty"
-            title={canSearchAndFilter ? 'No messages match' : 'No recent messages'}
+            title={canSearchAndFilter ? 'No messages match' : 'No delayed messages'}
             message={
               canSearchAndFilter
                 ? 'Try clearing your search or changing the active filters.'
-                : `No messages were captured in your current ${entitlements.feedHistoryHours ?? 3}-hour window.`
+                : `No messages were captured in the ${starterHistoryHours}-hour window available from about ${entitlements.feedDelayHours} hours ago.`
             }
             actionLabel={canSearchAndFilter && (activeFilterCount || searchDraft || submittedSearch) ? 'Clear filters' : undefined}
             onAction={canSearchAndFilter && (activeFilterCount || searchDraft || submittedSearch)
