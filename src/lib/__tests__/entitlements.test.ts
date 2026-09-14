@@ -8,7 +8,7 @@ import {
   sanitizeFeedFiltersForEntitlements,
 } from '../entitlements';
 
-function profile(entitlements?: MobileClientEntitlements): UserProfile {
+function profile(entitlements?: Partial<MobileClientEntitlements>): UserProfile {
   return {
     id: 'user-1',
     email: 'user@example.com',
@@ -33,15 +33,34 @@ test('missing mobile entitlements fail closed to Starter access', () => {
   assert.deepEqual(getMobileEntitlements(null), {
     canSearchAndFilterFeed: false,
     canUseAlerts: false,
-    feedHistoryHours: 3,
+    feedHistoryHours: 1,
+    feedDelayHours: 24,
     followedEntityLimit: 0,
   });
   assert.deepEqual(getMobileEntitlements(profile()), {
     canSearchAndFilterFeed: false,
     canUseAlerts: false,
-    feedHistoryHours: 3,
+    feedHistoryHours: 1,
+    feedDelayHours: 24,
     followedEntityLimit: 0,
   });
+  assert.deepEqual(
+    getMobileEntitlements(
+      profile({
+        canSearchAndFilterFeed: false,
+        canUseAlerts: false,
+        feedHistoryHours: 1,
+        followedEntityLimit: 0,
+      }),
+    ),
+    {
+      canSearchAndFilterFeed: false,
+      canUseAlerts: false,
+      feedHistoryHours: 1,
+      feedDelayHours: 24,
+      followedEntityLimit: 0,
+    },
+  );
 });
 
 test('valid server capabilities are used without deriving them from the plan name', () => {
@@ -49,6 +68,7 @@ test('valid server capabilities are used without deriving them from the plan nam
     canSearchAndFilterFeed: true,
     canUseAlerts: true,
     feedHistoryHours: 72,
+    feedDelayHours: 0,
     followedEntityLimit: 3,
   });
   user.client!.subscriptionPlan = 'unexpected-display-name';
@@ -57,6 +77,7 @@ test('valid server capabilities are used without deriving them from the plan nam
     canSearchAndFilterFeed: true,
     canUseAlerts: true,
     feedHistoryHours: 72,
+    feedDelayHours: 0,
     followedEntityLimit: 3,
   });
 });
@@ -68,13 +89,15 @@ test('malformed server capability values fail closed', () => {
         canSearchAndFilterFeed: false,
         canUseAlerts: false,
         feedHistoryHours: Number.NaN,
+        feedDelayHours: Number.NaN,
         followedEntityLimit: -1,
       }),
     ),
     {
       canSearchAndFilterFeed: false,
       canUseAlerts: false,
-      feedHistoryHours: 3,
+      feedHistoryHours: 1,
+      feedDelayHours: 24,
       followedEntityLimit: 0,
     },
   );
@@ -84,7 +107,7 @@ test('locked accounts cannot serialize stale feed filters', () => {
   const filters = { search: 'fundraising', state: 'TX', subscriptionsOnly: true };
   const starter = getMobileEntitlements(profile());
   const paid = getMobileEntitlements(
-    profile({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, followedEntityLimit: 3 }),
+    profile({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, feedDelayHours: 0, followedEntityLimit: 3 }),
   );
 
   assert.deepEqual(sanitizeFeedFiltersForEntitlements(filters, starter), {});
@@ -92,7 +115,7 @@ test('locked accounts cannot serialize stale feed filters', () => {
 });
 
 test('follow capability handles zero, limited, and unlimited plans', () => {
-  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: false, canUseAlerts: false, feedHistoryHours: 3, followedEntityLimit: 0 }), false);
-  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, followedEntityLimit: 3 }), true);
-  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: null, followedEntityLimit: null }), true);
+  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: false, canUseAlerts: false, feedHistoryHours: 1, feedDelayHours: 24, followedEntityLimit: 0 }), false);
+  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, feedDelayHours: 0, followedEntityLimit: 3 }), true);
+  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: null, feedDelayHours: 0, followedEntityLimit: null }), true);
 });

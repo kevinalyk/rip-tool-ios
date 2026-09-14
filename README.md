@@ -8,7 +8,8 @@ Native iPhone client for Inbox.GOP, built with Expo and React Native. It uses th
 - Rotating mobile session with the refresh token stored in iOS secure storage
 - Automatic single-flight token refresh and forced-session handling
 - Plan-aware, cursor-paginated email/SMS feed: Starter accounts receive the
-  latest three hours without search or filters; paid plans receive their
+  one-hour window from approximately 24 hours ago without search or filters;
+  paid plans receive their
   server-configured history, filter, and follow capabilities
 - Message detail with a sandboxed visual email preview, native SMS presentation,
   safe external CTA links, and the iPhone share sheet
