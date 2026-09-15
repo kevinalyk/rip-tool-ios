@@ -138,6 +138,41 @@ export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
   );
 }
 
+export function LaunchHoldingScreen() {
+  const theme = useAppTheme();
+
+  return (
+    <View
+      accessibilityLabel="Preparing Inbox.GOP"
+      accessibilityRole="image"
+      style={[styles.overlay, { backgroundColor: theme.background }]}>
+      <StatusBar hidden />
+      <View style={styles.stage}>
+        <View style={styles.markLayer}>
+          <Image
+            contentFit="contain"
+            source={require('@/assets/images/inbox-gop-envelope-layer.png')}
+            style={styles.markImage}
+          />
+        </View>
+        <View style={[styles.markLayer, styles.arrowLayer]}>
+          <Image
+            contentFit="contain"
+            source={require('@/assets/images/inbox-gop-arrow-layer.png')}
+            style={styles.markImage}
+          />
+        </View>
+        <View style={styles.wordReveal}>
+          <View style={styles.wordmark}>
+            <Text style={[styles.wordmarkText, { color: theme.navy }]}>Inbox</Text>
+            <Text style={[styles.wordmarkText, { color: theme.red }]}>.GOP</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   overlay: {
     alignItems: 'center',
