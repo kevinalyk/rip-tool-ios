@@ -1,12 +1,12 @@
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { AccessibilityInfo, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   interpolateColor,
-  runOnJS,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withSequence,
@@ -27,73 +27,63 @@ const MARK_HEIGHT = 247;
 // otherwise the branded sequence runs behind it and users only see the final mark.
 const IOS_APP_OPEN_TRANSITION_MS = 650;
 const IMPACT_DELAY_MS = 610;
+const ANIMATION_COMPLETE_MS = IOS_APP_OPEN_TRANSITION_MS + 1920;
+const REDUCED_MOTION_HOLD_MS = 550;
 
 export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
   const theme = useAppTheme();
   const { height } = useWindowDimensions();
-  const arrowDrop = useSharedValue(-Math.max(height * 0.58, 390));
+  const reduceMotion = useReducedMotion();
+  const arrowDrop = useSharedValue(reduceMotion ? 0 : -Math.max(height * 0.58, 390));
   const impactOffset = useSharedValue(0);
-  const wordDrop = useSharedValue(-48);
-  const gopColor = useSharedValue(0);
-  const overlayOpacity = useSharedValue(1);
+  const wordDrop = useSharedValue(reduceMotion ? 0 : -48);
+  const gopColor = useSharedValue(reduceMotion ? 1 : 0);
 
   useEffect(() => {
-    let mounted = true;
-    let reducedMotionTimer: ReturnType<typeof setTimeout> | undefined;
+    let completionTimer: ReturnType<typeof setTimeout> | undefined;
 
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
-      if (!mounted) return;
+    if (reduceMotion) {
+      completionTimer = setTimeout(onFinish, REDUCED_MOTION_HOLD_MS);
+      return () => clearTimeout(completionTimer);
+    }
 
-      if (reduceMotion) {
-        arrowDrop.value = 0;
-        wordDrop.value = 0;
-        gopColor.value = 1;
-        reducedMotionTimer = setTimeout(onFinish, 550);
-        return;
-      }
+    arrowDrop.value = withDelay(
+      IOS_APP_OPEN_TRANSITION_MS + 80,
+      withTiming(0, {
+        duration: 530,
+        easing: Easing.bezier(0.3, 0, 0.85, 0.58),
+      }),
+    );
 
-      arrowDrop.value = withDelay(
-        IOS_APP_OPEN_TRANSITION_MS + 80,
-        withTiming(0, {
-          duration: 530,
-          easing: Easing.bezier(0.3, 0, 0.85, 0.58),
-        }),
-      );
+    impactOffset.value = withDelay(
+      IOS_APP_OPEN_TRANSITION_MS + IMPACT_DELAY_MS,
+      withSequence(
+        withTiming(27, { duration: 95, easing: Easing.out(Easing.quad) }),
+        withSpring(-9, { damping: 10, stiffness: 260, mass: 0.55 }),
+        withSpring(0, { damping: 13, stiffness: 220, mass: 0.5 }),
+      ),
+    );
 
-      impactOffset.value = withDelay(
-        IOS_APP_OPEN_TRANSITION_MS + IMPACT_DELAY_MS,
-        withSequence(
-          withTiming(27, { duration: 95, easing: Easing.out(Easing.quad) }),
-          withSpring(-9, { damping: 10, stiffness: 260, mass: 0.55 }),
-          withSpring(0, { damping: 13, stiffness: 220, mass: 0.5 }),
-        ),
-      );
+    wordDrop.value = withDelay(
+      IOS_APP_OPEN_TRANSITION_MS + 750,
+      withSpring(0, { damping: 10, stiffness: 145, mass: 0.72 }),
+    );
 
-      wordDrop.value = withDelay(
-        IOS_APP_OPEN_TRANSITION_MS + 750,
-        withSpring(0, { damping: 10, stiffness: 145, mass: 0.72 }),
-      );
+    gopColor.value = withDelay(
+      IOS_APP_OPEN_TRANSITION_MS + 1270,
+      withTiming(1, { duration: 190, easing: Easing.out(Easing.cubic) }),
+    );
 
-      gopColor.value = withDelay(
-        IOS_APP_OPEN_TRANSITION_MS + 1270,
-        withTiming(1, { duration: 190, easing: Easing.out(Easing.cubic) }),
-      );
-
-      overlayOpacity.value = withDelay(
-        IOS_APP_OPEN_TRANSITION_MS + 1700,
-        withTiming(0, { duration: 220 }, (finished) => {
-          if (finished) runOnJS(onFinish)();
-        }),
-      );
-    });
+    // Keep the completed logo fully visible. The next authentication-loading
+    // frame renders the identical artwork, avoiding a black flash or a second
+    // logo appearance while the native Face ID prompt is presented.
+    completionTimer = setTimeout(onFinish, ANIMATION_COMPLETE_MS);
 
     return () => {
-      mounted = false;
-      if (reducedMotionTimer) clearTimeout(reducedMotionTimer);
+      if (completionTimer) clearTimeout(completionTimer);
     };
-  }, [arrowDrop, gopColor, impactOffset, onFinish, overlayOpacity, wordDrop]);
+  }, [arrowDrop, gopColor, impactOffset, onFinish, reduceMotion, wordDrop]);
 
-  const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
   const envelopeStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: impactOffset.value }],
   }));
@@ -112,7 +102,7 @@ export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
       accessibilityLabel="Inbox.GOP"
       accessibilityRole="image"
       pointerEvents="none"
-      style={[styles.overlay, { backgroundColor: theme.background }, overlayStyle]}>
+      style={[styles.overlay, { backgroundColor: theme.background }]}>
       <StatusBar hidden />
       <View style={styles.stage}>
         <Animated.View style={[styles.markLayer, envelopeStyle]}>
