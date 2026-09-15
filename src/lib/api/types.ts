@@ -186,6 +186,11 @@ export type SavedFeedView = {
   updatedAt: string;
 };
 
+export type CreateSavedFeedViewInput = {
+  name: string;
+  filters: FeedFilters;
+};
+
 export type SelectOption = {
   value: string;
   label: string;

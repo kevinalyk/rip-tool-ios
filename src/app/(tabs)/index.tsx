@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -84,6 +84,13 @@ export default function FeedScreen() {
     queryKey: ['feed-saved-views'],
     queryFn: mobileApi.savedFeedViews,
     enabled: canSearchAndFilter,
+  });
+  const createSavedView = useMutation({
+    mutationFn: ({ name, currentFilters }: { name: string; currentFilters: FeedFilters }) =>
+      mobileApi.createSavedFeedView({ name, filters: currentFilters }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['feed-saved-views'] });
+    },
   });
   const feed = useInfiniteQuery({
     queryKey: ['feed', effectiveFilters],
@@ -294,7 +301,12 @@ export default function FeedScreen() {
           views={savedViews.data?.data || []}
           loading={savedViews.isLoading}
           error={savedViews.error instanceof Error ? savedViews.error.message : undefined}
+          canSaveCurrentView={Boolean(submittedSearch || activeFilterCount)}
+          creating={createSavedView.isPending}
           onClose={() => setShowSavedViews(false)}
+          onCreate={async (name) => {
+            await createSavedView.mutateAsync({ name, currentFilters: effectiveFilters });
+          }}
           onRetry={() => void savedViews.refetch()}
           onSelect={applySavedView}
         />

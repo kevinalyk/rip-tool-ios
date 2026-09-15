@@ -2,11 +2,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-naviga
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useColorScheme, View } from 'react-native';
 
 import { ContentState } from '@/components/content-state';
 import { FaceIdGate } from '@/components/face-id-gate';
+import { LaunchAnimation } from '@/components/launch-animation';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { AppearanceProvider } from '@/providers/appearance-provider';
@@ -15,10 +16,18 @@ import { addNotificationResponseListener, getLastNotificationTarget } from '@/li
 
 void SplashScreen.preventAutoHideAsync();
 
+let hasPlayedLaunchAnimation = false;
+
 function RootNavigator() {
   const { state, error, retry, unlockWithFaceId, continueWithPassword } = useAuth();
   const scheme = useColorScheme();
   const theme = themes[scheme === 'dark' ? 'dark' : 'light'];
+  const [showLaunchAnimation, setShowLaunchAnimation] = useState(!hasPlayedLaunchAnimation);
+
+  const finishLaunchAnimation = useCallback(() => {
+    hasPlayedLaunchAnimation = true;
+    setShowLaunchAnimation(false);
+  }, []);
 
   useEffect(() => {
     if (state !== 'loading') void SplashScreen.hideAsync();
@@ -39,6 +48,8 @@ function RootNavigator() {
   }, [state]);
 
   if (state === 'loading') return <View style={{ flex: 1, backgroundColor: theme.background }} />;
+
+  if (showLaunchAnimation) return <LaunchAnimation onFinish={finishLaunchAnimation} />;
 
   if (state === 'locked') {
     return (
