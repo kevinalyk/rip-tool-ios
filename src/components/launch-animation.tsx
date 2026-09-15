@@ -22,6 +22,10 @@ type LaunchAnimationProps = {
 
 const MARK_WIDTH = 190;
 const MARK_HEIGHT = 247;
+// iOS spends roughly half a second animating from the Home Screen into the app.
+// Hold the initial envelope-only frame until that system transition is visible;
+// otherwise the branded sequence runs behind it and users only see the final mark.
+const IOS_APP_OPEN_TRANSITION_MS = 650;
 const IMPACT_DELAY_MS = 610;
 
 export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
@@ -49,7 +53,7 @@ export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
       }
 
       arrowDrop.value = withDelay(
-        80,
+        IOS_APP_OPEN_TRANSITION_MS + 80,
         withTiming(0, {
           duration: 530,
           easing: Easing.bezier(0.3, 0, 0.85, 0.58),
@@ -57,7 +61,7 @@ export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
       );
 
       impactOffset.value = withDelay(
-        IMPACT_DELAY_MS,
+        IOS_APP_OPEN_TRANSITION_MS + IMPACT_DELAY_MS,
         withSequence(
           withTiming(27, { duration: 95, easing: Easing.out(Easing.quad) }),
           withSpring(-9, { damping: 10, stiffness: 260, mass: 0.55 }),
@@ -66,17 +70,17 @@ export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
       );
 
       wordDrop.value = withDelay(
-        750,
+        IOS_APP_OPEN_TRANSITION_MS + 750,
         withSpring(0, { damping: 10, stiffness: 145, mass: 0.72 }),
       );
 
       gopColor.value = withDelay(
-        1270,
+        IOS_APP_OPEN_TRANSITION_MS + 1270,
         withTiming(1, { duration: 190, easing: Easing.out(Easing.cubic) }),
       );
 
       overlayOpacity.value = withDelay(
-        1700,
+        IOS_APP_OPEN_TRANSITION_MS + 1700,
         withTiming(0, { duration: 220 }, (finished) => {
           if (finished) runOnJS(onFinish)();
         }),
