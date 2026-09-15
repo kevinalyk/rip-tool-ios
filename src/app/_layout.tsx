@@ -22,16 +22,6 @@ function RootNavigator() {
   const { state, error, retry, unlockWithFaceId, continueWithPassword } = useAuth();
   const scheme = useColorScheme();
   const theme = themes[scheme === 'dark' ? 'dark' : 'light'];
-  const [showLaunchAnimation, setShowLaunchAnimation] = useState(!hasPlayedLaunchAnimation);
-
-  const finishLaunchAnimation = useCallback(() => {
-    hasPlayedLaunchAnimation = true;
-    setShowLaunchAnimation(false);
-  }, []);
-
-  useEffect(() => {
-    if (state !== 'loading') void SplashScreen.hideAsync();
-  }, [state]);
 
   useEffect(() => {
     const subscription = addNotificationResponseListener((feedItemId, messageType) => {
@@ -48,8 +38,6 @@ function RootNavigator() {
   }, [state]);
 
   if (state === 'loading') return <View style={{ flex: 1, backgroundColor: theme.background }} />;
-
-  if (showLaunchAnimation) return <LaunchAnimation onFinish={finishLaunchAnimation} />;
 
   if (state === 'locked') {
     return (
@@ -98,6 +86,26 @@ function RootNavigator() {
   );
 }
 
+function LaunchSequencedApp() {
+  const [showLaunchAnimation, setShowLaunchAnimation] = useState(!hasPlayedLaunchAnimation);
+
+  const finishLaunchAnimation = useCallback(() => {
+    hasPlayedLaunchAnimation = true;
+    setShowLaunchAnimation(false);
+  }, []);
+
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+
+  if (showLaunchAnimation) return <LaunchAnimation onFinish={finishLaunchAnimation} />;
+
+  // AuthProvider intentionally mounts only after the branded launch sequence.
+  // Its initial bootstrap may invoke Face ID, so mounting it earlier would let
+  // the native biometric prompt cover and effectively skip the animation.
+  return <ThemedRootLayout />;
+}
+
 function ThemedRootLayout() {
   const scheme = useColorScheme();
   const colors = themes[scheme === 'dark' ? 'dark' : 'light'];
@@ -129,7 +137,7 @@ function ThemedRootLayout() {
 export default function RootLayout() {
   return (
     <AppearanceProvider>
-      <ThemedRootLayout />
+      <LaunchSequencedApp />
     </AppearanceProvider>
   );
 }
