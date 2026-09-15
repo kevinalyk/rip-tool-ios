@@ -74,6 +74,7 @@ function RootNavigator() {
       }}>
       <Stack.Protected guard={state === 'unauthenticated'}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="signup" options={{ title: 'Create account', presentation: 'modal' }} />
       </Stack.Protected>
       <Stack.Protected guard={state === 'authenticated'}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

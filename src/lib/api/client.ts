@@ -4,8 +4,8 @@ import * as Device from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
 
 import { PRODUCT_NAME } from '@/constants/branding';
-import { API_BASE_URL } from '@/lib/api/config';
-import type { ApiErrorBody, LoginResponse, RefreshResponse } from '@/lib/api/types';
+import { API_BASE_URL, API_ORIGIN } from '@/lib/api/config';
+import type { ApiErrorBody, CreateAccountInput, CreateAccountResponse, LoginResponse, RefreshResponse } from '@/lib/api/types';
 
 const REFRESH_TOKEN_KEY = 'rip.mobile.refresh-token';
 const DEVICE_ID_KEY = 'rip.mobile.device-id';
@@ -102,6 +102,10 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 async function fetchWithTimeout(path: string, init: RequestInit): Promise<Response> {
+  return fetchUrlWithTimeout(`${API_BASE_URL}/${path.replace(/^\//, '')}`, init);
+}
+
+async function fetchUrlWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const network = await NetInfo.fetch();
   if (network.isConnected === false) throw new NetworkError();
 
@@ -109,7 +113,7 @@ async function fetchWithTimeout(path: string, init: RequestInit): Promise<Respon
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    return await fetch(`${API_BASE_URL}/${path.replace(/^\//, '')}`, {
+    return await fetch(url, {
       ...init,
       signal: controller.signal,
       headers: {
@@ -123,6 +127,34 @@ async function fetchWithTimeout(path: string, init: RequestInit): Promise<Respon
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function createAccount(input: CreateAccountInput): Promise<CreateAccountResponse> {
+  const response = await fetchUrlWithTimeout(`${API_ORIGIN}/api/auth/signup`, {
+    method: 'POST',
+    body: JSON.stringify({
+      clientName: input.clientName.trim(),
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      email: input.email.trim().toLowerCase(),
+      password: input.password,
+      _hp: '',
+      _ts: input.formLoadedAt,
+    }),
+  });
+  const raw = await response.text();
+  let body: (CreateAccountResponse & { error?: string }) | undefined;
+
+  try {
+    body = raw ? (JSON.parse(raw) as CreateAccountResponse & { error?: string }) : undefined;
+  } catch {
+    throw new ApiError(response.status, 'INVALID_RESPONSE', `${PRODUCT_NAME} returned an unexpected response.`);
+  }
+
+  if (!response.ok) {
+    throw new ApiError(response.status, 'SIGNUP_FAILED', body?.error || 'Unable to create your account.');
+  }
+  return body as CreateAccountResponse;
 }
 
 async function publicRequest<T>(path: string, init: RequestInit): Promise<T> {

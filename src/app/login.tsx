@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import { Link, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -253,6 +254,15 @@ export default function LoginScreen() {
                 {requiresReset ? 'Reset your password to continue' : 'Forgot password?'}
               </Text>
             </Pressable>
+
+            <View style={styles.accountPrompt}>
+              <Text style={[styles.accountPromptText, { color: theme.textMuted }]}>New to {PRODUCT_NAME}?</Text>
+              <Link href={'/signup' as Href} asChild>
+                <Pressable accessibilityRole="link" style={styles.createAccountLink}>
+                  <Text style={[styles.linkText, { color: theme.red }]}>Create an account</Text>
+                </Pressable>
+              </Link>
+            </View>
           </View>
 
         </ScrollView>
@@ -342,4 +352,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   linkText: { fontSize: 14, fontWeight: '700' },
+  accountPrompt: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  accountPromptText: { fontSize: 14 },
+  createAccountLink: { justifyContent: 'center', minHeight: 44, paddingLeft: spacing.sm },
 });

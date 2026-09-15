@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 
 import {
   clearSession,
+  createAccount,
   hasStoredSession,
   login,
   logout,
@@ -11,7 +12,7 @@ import {
   setSessionInvalidatedHandler,
 } from '@/lib/api/client';
 import { mobileApi } from '@/lib/api/endpoints';
-import type { UserProfile } from '@/lib/api/types';
+import type { CreateAccountInput, UserProfile } from '@/lib/api/types';
 import {
   authenticateWithFaceId,
   faceIdErrorMessage,
@@ -28,6 +29,7 @@ type AuthContextValue = {
   user: UserProfile | null;
   error: string | null;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  signUp: (input: CreateAccountInput) => Promise<void>;
   signOut: () => Promise<void>;
   retry: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -175,6 +177,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, []);
 
+  const signUp = useCallback(async (input: CreateAccountInput) => {
+    await createAccount(input);
+    await login(input.email, input.password, true);
+    try {
+      const profile = await mobileApi.me();
+      await hydrateFollowingPushPreference(profile.id);
+      setUser(profile);
+      setState('authenticated');
+      setError(null);
+    } catch (profileError) {
+      await clearSession();
+      throw profileError;
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await unregisterPushNotifications().catch(() => undefined);
@@ -219,8 +236,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [refreshProfile, state, unlockWithFaceId]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ state, user, error, signIn, signOut, retry, refreshProfile, unlockWithFaceId, continueWithPassword }),
-    [continueWithPassword, error, refreshProfile, retry, signIn, signOut, state, unlockWithFaceId, user],
+    () => ({ state, user, error, signIn, signUp, signOut, retry, refreshProfile, unlockWithFaceId, continueWithPassword }),
+    [continueWithPassword, error, refreshProfile, retry, signIn, signOut, signUp, state, unlockWithFaceId, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
