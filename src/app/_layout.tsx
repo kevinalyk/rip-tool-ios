@@ -7,7 +7,7 @@ import { useColorScheme, View } from 'react-native';
 
 import { ContentState } from '@/components/content-state';
 import { FaceIdGate } from '@/components/face-id-gate';
-import { LaunchAnimation } from '@/components/launch-animation';
+import { LaunchAnimation, LaunchHoldingScreen } from '@/components/launch-animation';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { AppearanceProvider } from '@/providers/appearance-provider';
@@ -37,7 +37,7 @@ function RootNavigator() {
     });
   }, [state]);
 
-  if (state === 'loading') return <View style={{ flex: 1, backgroundColor: theme.background }} />;
+  if (state === 'loading') return <LaunchHoldingScreen />;
 
   if (state === 'locked') {
     return (
