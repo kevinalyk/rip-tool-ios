@@ -6,6 +6,7 @@ import type {
   AnnouncementDetail,
   AnnouncementPage,
   CreateAlertInput,
+  CreateSavedFeedViewInput,
   DirectoryEntityDetail,
   DirectoryFilters,
   DirectoryOptions,
@@ -28,6 +29,11 @@ export const mobileApi = {
     apiRequest<FeedPage>(`feed${buildFeedQuery(filters, cursor)}`),
   feedFilters: () => apiRequest<FeedFilterOptions>('feed/filters'),
   savedFeedViews: () => apiRequest<{ data: SavedFeedView[] }>('feed/views'),
+  createSavedFeedView: (input: CreateSavedFeedViewInput) =>
+    apiRequest<{ data: SavedFeedView }>('feed/views', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   feedItem: (id: string, type: MessageType) =>
     apiRequest<{ data: FeedDetail }>(`feed/${encodeURIComponent(id)}?type=${type}`),
   shareFeedItem: (id: string, type: MessageType) =>
