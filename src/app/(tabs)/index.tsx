@@ -207,6 +207,25 @@ export default function FeedScreen() {
 
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={`Saved views${savedViews.data?.data.length ? `, ${savedViews.data.data.length} available` : ''}`}
+                    onPress={() => {
+                      setShowSavedViews(true);
+                      void savedViews.refetch();
+                    }}
+                    style={({ pressed }) => [
+                      styles.savedViewsButton,
+                      { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.72 : 1 },
+                    ]}>
+                    <Ionicons name="eye-outline" size={22} color={theme.red} />
+                    {savedViews.data?.data.length ? (
+                      <View style={[styles.savedViewsCount, { backgroundColor: theme.red }]}>
+                        <Text style={styles.savedViewsCountText}>{savedViews.data.data.length}</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityRole="button"
                     accessibilityLabel={`Filters${activeFilterCount ? `, ${activeFilterCount} active` : ''}`}
                     onPress={() => setShowFilters(true)}
                     style={({ pressed }) => [
@@ -217,27 +236,6 @@ export default function FeedScreen() {
                     {activeFilterCount ? <Text style={styles.filterCount}>{activeFilterCount}</Text> : null}
                   </Pressable>
                 </View>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Saved views${savedViews.data?.data.length ? `, ${savedViews.data.data.length} available` : ''}`}
-                  onPress={() => {
-                    setShowSavedViews(true);
-                    void savedViews.refetch();
-                  }}
-                  style={({ pressed }) => [
-                    styles.savedViewsButton,
-                    { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.68 : 1 },
-                  ]}>
-                  <Ionicons name="eye-outline" size={19} color={theme.red} />
-                  <Text style={[styles.savedViewsText, { color: theme.text }]}>Saved views</Text>
-                  {savedViews.data?.data.length ? (
-                    <View style={[styles.savedViewsCount, { backgroundColor: theme.surfaceMuted }]}>
-                      <Text style={[styles.savedViewsCountText, { color: theme.textMuted }]}>{savedViews.data.data.length}</Text>
-                    </View>
-                  ) : null}
-                  <Ionicons name="chevron-forward" size={17} color={theme.textMuted} />
-                </Pressable>
 
                 <ActiveFilterBar filters={filters} options={filterOptions.data} onChange={setFilters} />
               </>
@@ -394,19 +392,29 @@ const styles = StyleSheet.create({
   },
   savedViewsButton: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
     borderCurve: 'continuous',
-    borderRadius: radii.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 50,
+    width: 50,
   },
-  savedViewsText: { fontSize: 13, fontWeight: '800' },
-  savedViewsCount: { borderRadius: radii.pill, minWidth: 22, paddingHorizontal: 6, paddingVertical: 2 },
-  savedViewsCountText: { fontSize: 11, fontVariant: ['tabular-nums'], fontWeight: '800', textAlign: 'center' },
+  savedViewsCount: {
+    borderRadius: 8,
+    minWidth: 16,
+    overflow: 'hidden',
+    paddingHorizontal: 4,
+    position: 'absolute',
+    right: 4,
+    top: 4,
+  },
+  savedViewsCountText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '800',
+    textAlign: 'center',
+  },
   footerSpinner: { padding: spacing.xl },
   footerSpace: { height: spacing.lg },
 });
