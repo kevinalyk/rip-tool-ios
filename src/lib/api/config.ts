@@ -31,3 +31,4 @@ export function normalizeApiBaseUrl(value: string): string {
 }
 
 export const API_BASE_URL = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL || PRODUCTION_API_URL);
+export const API_ORIGIN = new URL(API_BASE_URL).origin;

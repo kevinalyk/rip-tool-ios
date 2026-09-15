@@ -50,6 +50,22 @@ export type LoginResponse = {
 
 export type RefreshResponse = Pick<LoginResponse, 'accessToken' | 'refreshToken' | 'expiresIn' | 'tokenType'>;
 
+export type CreateAccountInput = {
+  clientName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  formLoadedAt: number;
+};
+
+export type CreateAccountResponse = {
+  clientId: string;
+  clientSlug: string;
+  userId: string;
+  requiresTrialCheckout: boolean;
+};
+
 export type Entity = {
   id: string;
   name: string;
