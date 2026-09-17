@@ -165,8 +165,20 @@ export async function hydrateFollowingPushPreference(userId: string): Promise<vo
   }
 }
 
-export async function syncPushNotificationsIfGranted(): Promise<void> {
-  if (await getPushPermissionState() === 'granted') await registerCurrentDevice();
+export async function initializeDefaultPushNotifications(userId: string): Promise<void> {
+  try {
+    // Apple remains the master permission gate. On the first authenticated launch,
+    // iOS presents its native prompt; later calls simply read the stored decision.
+    const permission = await enablePushNotifications();
+    if (permission === 'granted') {
+      await loadFollowingPushPreference(userId);
+      return;
+    }
+  } catch {
+    // Push registration must never block an otherwise successful sign-in.
+  }
+
+  await hydrateFollowingPushPreference(userId);
 }
 
 export async function unregisterPushNotifications(): Promise<void> {

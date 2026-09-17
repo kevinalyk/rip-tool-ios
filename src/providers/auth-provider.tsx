@@ -20,8 +20,7 @@ import {
   isFaceIdEnabled,
 } from '@/lib/face-id';
 import {
-  hydrateFollowingPushPreference,
-  syncPushNotificationsIfGranted,
+  initializeDefaultPushNotifications,
   unregisterPushNotifications,
 } from '@/lib/notifications';
 
@@ -102,10 +101,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      await Promise.all([
-        hydrateFollowingPushPreference(profile.id),
-        syncPushNotificationsIfGranted().catch(() => undefined),
-      ]);
+      await initializeDefaultPushNotifications(profile.id);
       setUser(profile);
       setState('authenticated');
     } catch (bootstrapError) {
@@ -174,10 +170,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await login(email, password, rememberMe);
     try {
       const profile = await mobileApi.me();
-      await Promise.all([
-        hydrateFollowingPushPreference(profile.id),
-        syncPushNotificationsIfGranted().catch(() => undefined),
-      ]);
+      await initializeDefaultPushNotifications(profile.id);
       setUser(profile);
       setState('authenticated');
       setError(null);
@@ -192,10 +185,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await login(input.email, input.password, true);
     try {
       const profile = await mobileApi.me();
-      await Promise.all([
-        hydrateFollowingPushPreference(profile.id),
-        syncPushNotificationsIfGranted().catch(() => undefined),
-      ]);
+      await initializeDefaultPushNotifications(profile.id);
       setUser(profile);
       setState('authenticated');
       setError(null);
