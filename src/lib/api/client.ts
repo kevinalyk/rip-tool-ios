@@ -132,6 +132,7 @@ async function fetchUrlWithTimeout(url: string, init: RequestInit): Promise<Resp
 export async function createAccount(input: CreateAccountInput): Promise<CreateAccountResponse> {
   const response = await fetchUrlWithTimeout(`${API_ORIGIN}/api/auth/signup`, {
     method: 'POST',
+    headers: { 'X-Inbox-Signup-Source': 'ios' },
     body: JSON.stringify({
       clientName: input.clientName.trim(),
       firstName: input.firstName.trim(),

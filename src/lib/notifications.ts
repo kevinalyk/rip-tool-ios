@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 
 import { getDeviceId } from '@/lib/api/client';
 import { mobileApi } from '@/lib/api/endpoints';
+import { decodeNotificationTarget, type NotificationTarget } from '@/lib/notification-target';
 import {
   cacheFollowingPushPreference,
   decodeFollowingPushPreference,
@@ -173,27 +174,18 @@ export async function unregisterPushNotifications(): Promise<void> {
 }
 
 export function addNotificationResponseListener(
-  onOpenMessage: (feedItemId: string, messageType: 'email' | 'sms') => void,
+  onOpenTarget: (target: NotificationTarget) => void,
 ) {
   return Notifications.addNotificationResponseReceivedListener((response) => {
-    const data = response.notification.request.content.data;
-    if (
-      data &&
-      typeof data.feedItemId === 'string' &&
-      (data.messageType === 'email' || data.messageType === 'sms')
-    ) {
-      onOpenMessage(data.feedItemId, data.messageType);
-    }
+    const target = decodeNotificationTarget(response.notification.request.content.data);
+    if (target) onOpenTarget(target);
   });
 }
 
-export async function getLastNotificationTarget(): Promise<{
-  feedItemId: string;
-  messageType: 'email' | 'sms';
-} | null> {
+export async function getLastNotificationTarget(): Promise<NotificationTarget | null> {
   const response = await Notifications.getLastNotificationResponseAsync();
-  const data = response?.notification.request.content.data;
-  if (!data || typeof data.feedItemId !== 'string' || (data.messageType !== 'email' && data.messageType !== 'sms')) return null;
+  const target = decodeNotificationTarget(response?.notification.request.content.data);
+  if (!target) return null;
   await Notifications.clearLastNotificationResponseAsync();
-  return { feedItemId: data.feedItemId, messageType: data.messageType };
+  return target;
 }
