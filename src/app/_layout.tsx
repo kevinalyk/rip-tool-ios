@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { AppearanceProvider } from '@/providers/appearance-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
 import { addNotificationResponseListener, getLastNotificationTarget } from '@/lib/notifications';
+import type { NotificationTarget } from '@/lib/notification-target';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -23,19 +24,28 @@ function RootNavigator() {
   const scheme = useColorScheme();
   const theme = themes[scheme === 'dark' ? 'dark' : 'light'];
 
-  useEffect(() => {
-    const subscription = addNotificationResponseListener((feedItemId, messageType) => {
-      router.push({ pathname: '/feed/[id]', params: { id: feedItemId, type: messageType } });
+  const openNotificationTarget = useCallback((target: NotificationTarget) => {
+    if (target.kind === 'announcement') {
+      router.push({ pathname: '/news/[slug]', params: { slug: target.slug } });
+      return;
+    }
+    router.push({
+      pathname: '/feed/[id]',
+      params: { id: target.feedItemId, type: target.messageType },
     });
-    return () => subscription.remove();
   }, []);
+
+  useEffect(() => {
+    const subscription = addNotificationResponseListener(openNotificationTarget);
+    return () => subscription.remove();
+  }, [openNotificationTarget]);
 
   useEffect(() => {
     if (state !== 'authenticated') return;
     void getLastNotificationTarget().then((target) => {
-      if (target) router.push({ pathname: '/feed/[id]', params: { id: target.feedItemId, type: target.messageType } });
+      if (target) openNotificationTarget(target);
     });
-  }, [state]);
+  }, [openNotificationTarget, state]);
 
   if (state === 'loading') return <LaunchHoldingScreen />;
 

@@ -162,7 +162,7 @@ export default function FeedDetailScreen() {
             <View style={[styles.followRow, { borderTopColor: theme.border }]}>
               <Text style={[styles.followHint, { color: theme.textMuted }]}>
                 {followLimitReached
-                  ? 'Your organization has reached its plan’s follow limit.'
+                  ? 'You have reached your plan’s follow limit.'
                   : `Keep ${entityName} prioritized in your feed.`}
               </Text>
               <PrimaryButton

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { router, useScrollToTop } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -30,6 +30,8 @@ export default function FeedScreen() {
   const theme = useAppTheme();
   const queryClient = useQueryClient();
   const { user, refreshProfile } = useAuth();
+  const listRef = useRef<FlatList<FeedItem>>(null);
+  useScrollToTop(listRef);
   const [searchDraft, setSearchDraft] = useState('');
   const [submittedSearch, setSubmittedSearch] = useState('');
   const [filters, setFilters] = useState<FeedFilters>({});
@@ -149,6 +151,7 @@ export default function FeedScreen() {
     <View style={[styles.flex, { backgroundColor: theme.background }]}>
       <OfflineBanner />
       <FlatList
+        ref={listRef}
         contentInsetAdjustmentBehavior="automatic"
         data={items}
         initialNumToRender={8}

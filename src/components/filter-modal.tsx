@@ -220,7 +220,7 @@ export function FilterModal({ visible, filters, options, onClose, onApply }: Fil
           <View style={[styles.toggleRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <View style={styles.toggleText}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Following only</Text>
-              <Text style={[styles.helper, { color: theme.textMuted }]}>Only messages from entities your organization follows.</Text>
+              <Text style={[styles.helper, { color: theme.textMuted }]}>Only messages from entities you follow.</Text>
             </View>
             <Switch
               accessibilityLabel="Following only"
