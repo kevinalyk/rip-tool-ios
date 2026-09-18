@@ -133,7 +133,7 @@ export default function FollowingScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.text }]}>Following</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Your organization’s priority entities and campaigns.</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Your priority entities and campaigns.</Text>
             <View style={[styles.notificationCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={[styles.notificationIcon, { backgroundColor: `${theme.red}14` }]}>
                 <Ionicons name="notifications-outline" size={23} color={theme.red} />
