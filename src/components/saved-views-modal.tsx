@@ -92,7 +92,7 @@ export function SavedViewsModal({
               </View>
               <View style={styles.copy}>
                 <Text style={[styles.saveTitle, { color: theme.text }]}>Save current view</Text>
-                <Text style={[styles.summary, { color: theme.textMuted }]}>Make the search and filters currently applied available to your organization.</Text>
+                <Text style={[styles.summary, { color: theme.textMuted }]}>Save the search and filters currently applied to your account.</Text>
               </View>
             </View>
 
@@ -118,7 +118,7 @@ export function SavedViewsModal({
             ) : saveError ? (
               <Text accessibilityRole="alert" style={[styles.feedback, { color: theme.danger }]}>{saveError}</Text>
             ) : savedName ? (
-              <Text accessibilityRole="alert" style={[styles.feedback, { color: theme.success }]}>“{savedName}” is now available to your organization.</Text>
+              <Text accessibilityRole="alert" style={[styles.feedback, { color: theme.success }]}>“{savedName}” is now saved to your account.</Text>
             ) : null}
             <PrimaryButton
               disabled={!canSaveCurrentView || !name.trim()}
@@ -129,7 +129,7 @@ export function SavedViewsModal({
             />
           </View>
 
-          <Text style={[styles.listTitle, { color: theme.text }]}>Your organization’s views</Text>
+          <Text style={[styles.listTitle, { color: theme.text }]}>Your saved views</Text>
           <Text style={[styles.helper, { color: theme.textMuted }]}>Choose a view to apply its saved search and filters.</Text>
 
           {loading ? (

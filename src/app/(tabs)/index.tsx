@@ -83,9 +83,9 @@ export default function FeedScreen() {
     enabled: canSearchAndFilter,
   });
   const savedViews = useQuery({
-    queryKey: ['feed-saved-views'],
+    queryKey: ['feed-saved-views', user?.id],
     queryFn: mobileApi.savedFeedViews,
-    enabled: canSearchAndFilter,
+    enabled: canSearchAndFilter && Boolean(user?.id),
   });
   const createSavedView = useMutation({
     mutationFn: ({ name, currentFilters }: { name: string; currentFilters: FeedFilters }) =>
@@ -217,7 +217,7 @@ export default function FeedScreen() {
 
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Saved views${savedViews.data?.data.length ? `, ${savedViews.data.data.length} available` : ''}`}
+                    accessibilityLabel="Saved views"
                     onPress={() => {
                       setShowSavedViews(true);
                       void savedViews.refetch();
@@ -227,11 +227,6 @@ export default function FeedScreen() {
                       { backgroundColor: theme.surface, borderColor: theme.border, opacity: pressed ? 0.72 : 1 },
                     ]}>
                     <Ionicons name="eye-outline" size={22} color={theme.red} />
-                    {savedViews.data?.data.length ? (
-                      <View style={[styles.savedViewsCount, { backgroundColor: theme.red }]}>
-                        <Text style={styles.savedViewsCountText}>{savedViews.data.data.length}</Text>
-                      </View>
-                    ) : null}
                   </Pressable>
 
                   <Pressable
@@ -413,22 +408,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 50,
     width: 50,
-  },
-  savedViewsCount: {
-    borderRadius: 8,
-    minWidth: 16,
-    overflow: 'hidden',
-    paddingHorizontal: 4,
-    position: 'absolute',
-    right: 4,
-    top: 4,
-  },
-  savedViewsCountText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '800',
-    textAlign: 'center',
   },
   footerSpinner: { padding: spacing.xl },
   footerSpace: { height: spacing.lg },
