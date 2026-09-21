@@ -28,6 +28,27 @@ In AdMob, add Inbox.GOP as an **unpublished iOS app**. That allows us to create 
 
 Google also requires payment information before the account is eligible for monetization. The AdMob payee should be the legal person or company that should receive the revenue. If Campaign Portal LLC will own this business line, use its legal and banking details rather than treating this as an informal personal account.
 
+## Current AdMob setup
+
+Created September 21, 2026 under `admin@rip-tool.com`:
+
+| Item | Status |
+| --- | --- |
+| AdMob account | Created; Google account verification pending |
+| Payment profile | Complete through the existing AdSense relationship |
+| App | Inbox.GOP, iOS, unpublished |
+| iOS bundle identifier | `com.rip-tool.app` |
+| AdMob app ID | `ca-app-pub-5715074898343065~8736741656` |
+| Native ad unit | Inbox.GOP Free CI Feed |
+| Native ad-unit ID | `ca-app-pub-5715074898343065/9125035721` |
+| Partner bidding | Off |
+| High-engagement ads | Off |
+| App Store link | Pending public App Store availability |
+| SDK/consent integration | Not started |
+| Live ads | Not enabled in the app |
+
+AdMob app and ad-unit IDs are public application configuration embedded in the shipped binary; they are not passwords or API secrets. Do not confuse them with private Google-account, payment, or signing credentials.
+
 ## Product rules
 
 ### Who sees ads
