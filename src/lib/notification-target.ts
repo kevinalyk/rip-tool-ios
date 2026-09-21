@@ -2,6 +2,22 @@ export type NotificationTarget =
   | { kind: 'feed'; feedItemId: string; messageType: 'email' | 'sms' }
   | { kind: 'announcement'; slug: string };
 
+export function notificationQueryKeys(target: NotificationTarget): readonly (readonly unknown[])[] {
+  if (target.kind === 'announcement') {
+    return [
+      ['announcements'],
+      ['announcement', target.slug],
+    ];
+  }
+
+  return [
+    ['feed'],
+    ['feed-filters'],
+    ['feed-item', target.messageType, target.feedItemId],
+    ['directory'],
+  ];
+}
+
 export function decodeNotificationTarget(data: unknown): NotificationTarget | null {
   if (!data || typeof data !== 'object') return null;
   const record = data as Record<string, unknown>;

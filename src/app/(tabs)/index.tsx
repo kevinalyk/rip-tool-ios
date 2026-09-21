@@ -168,7 +168,11 @@ export default function FeedScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => void Promise.allSettled([feed.refetch(), savedViews.refetch(), refreshProfile()])}
+            onRefresh={() => void Promise.allSettled([
+              feed.refetch(),
+              refreshProfile(),
+              ...(canSearchAndFilter ? [filterOptions.refetch(), savedViews.refetch()] : []),
+            ])}
             tintColor={theme.red}
           />
         }

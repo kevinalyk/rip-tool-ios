@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -12,8 +13,12 @@ import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { AppearanceProvider, useAppearancePreference } from '@/providers/appearance-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
-import { addNotificationResponseListener, getLastNotificationTarget } from '@/lib/notifications';
-import type { NotificationTarget } from '@/lib/notification-target';
+import {
+  addNotificationReceivedListener,
+  addNotificationResponseListener,
+  getLastNotificationTarget,
+} from '@/lib/notifications';
+import { notificationQueryKeys, type NotificationTarget } from '@/lib/notification-target';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -21,10 +26,20 @@ let hasPlayedLaunchAnimation = false;
 
 function RootNavigator() {
   const { state, error, retry, unlockWithFaceId, continueWithPassword } = useAuth();
+  const queryClient = useQueryClient();
   const scheme = useColorScheme();
   const theme = themes[scheme === 'dark' ? 'dark' : 'light'];
 
+  const refreshNotificationTarget = useCallback((target: NotificationTarget) => {
+    void Promise.all(
+      notificationQueryKeys(target).map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      ),
+    );
+  }, [queryClient]);
+
   const openNotificationTarget = useCallback((target: NotificationTarget) => {
+    refreshNotificationTarget(target);
     if (target.kind === 'announcement') {
       router.push({ pathname: '/news/[slug]', params: { slug: target.slug } });
       return;
@@ -33,7 +48,12 @@ function RootNavigator() {
       pathname: '/feed/[id]',
       params: { id: target.feedItemId, type: target.messageType },
     });
-  }, []);
+  }, [refreshNotificationTarget]);
+
+  useEffect(() => {
+    const subscription = addNotificationReceivedListener(refreshNotificationTarget);
+    return () => subscription.remove();
+  }, [refreshNotificationTarget]);
 
   useEffect(() => {
     const subscription = addNotificationResponseListener(openNotificationTarget);

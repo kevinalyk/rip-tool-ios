@@ -119,7 +119,13 @@ export default function DirectoryScreen() {
           if (directory.hasNextPage && !directory.isFetchingNextPage) void directory.fetchNextPage();
         }}
         onEndReachedThreshold={0.45}
-        refreshControl={<RefreshControl refreshing={directory.isRefetching && !directory.isFetchingNextPage} onRefresh={() => void directory.refetch()} tintColor={theme.red} />}
+        refreshControl={(
+          <RefreshControl
+            refreshing={directory.isRefetching && !directory.isFetchingNextPage}
+            onRefresh={() => void Promise.allSettled([directory.refetch(), options.refetch()])}
+            tintColor={theme.red}
+          />
+        )}
         renderItem={renderEntity}
         ListHeaderComponent={
           <View style={styles.header}>
