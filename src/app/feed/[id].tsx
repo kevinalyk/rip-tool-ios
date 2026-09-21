@@ -23,6 +23,7 @@ import type { MessageType } from '@/lib/api/types';
 import { getMobileEntitlements } from '@/lib/entitlements';
 import { extractCtaLinks, formatDate, stripHtml, titleCase } from '@/lib/format';
 import { invalidateFollowingQueries } from '@/lib/following-query-cache';
+import { getMobileDataScope } from '@/lib/mobile-data-scope';
 import { useAuth } from '@/providers/auth-provider';
 
 type DetailSection = 'preview' | 'links';
@@ -32,17 +33,18 @@ export default function FeedDetailScreen() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const entitlements = getMobileEntitlements(user);
+  const dataScope = getMobileDataScope(user);
   const params = useLocalSearchParams<{ id: string; type?: string }>();
   const [section, setSection] = useState<DetailSection>('preview');
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const type: MessageType = params.type === 'sms' ? 'sms' : 'email';
 
   const detail = useQuery({
-    queryKey: ['feed-item', type, id],
+    queryKey: ['feed-item', type, id, dataScope],
     queryFn: () => mobileApi.feedItem(id, type),
     enabled: Boolean(id),
   });
-  const followed = useQuery({ queryKey: ['followed-entities'], queryFn: mobileApi.followedEntities });
+  const followed = useQuery({ queryKey: ['followed-entities', dataScope], queryFn: mobileApi.followedEntities });
   const item = detail.data?.data;
   const isFollowing = Boolean(item?.entityId && followed.data?.data.some((entity) => entity.id === item.entityId));
   const followedCount = followed.data?.data.length ?? 0;

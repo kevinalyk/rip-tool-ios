@@ -14,6 +14,7 @@ import type { DirectoryRecentMessage } from '@/lib/api/types';
 import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
 import { formatDate } from '@/lib/format';
 import { invalidateFollowingQueries } from '@/lib/following-query-cache';
+import { getMobileDataScope } from '@/lib/mobile-data-scope';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function DirectoryEntityScreen() {
@@ -23,8 +24,9 @@ export default function DirectoryEntityScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const canAddFollows = canFollowNewEntities(getMobileEntitlements(user));
+  const dataScope = getMobileDataScope(user);
   const detail = useQuery({
-    queryKey: ['directory-entity', id],
+    queryKey: ['directory-entity', id, dataScope],
     queryFn: () => mobileApi.directoryEntity(id),
     enabled: Boolean(id),
   });
