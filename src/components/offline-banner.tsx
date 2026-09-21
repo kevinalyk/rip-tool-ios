@@ -2,11 +2,12 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { spacing, useAppTheme } from '@/constants/theme';
+import { isNetworkOnline } from '@/lib/network-state';
 
 export function OfflineBanner() {
   const network = useNetInfo();
   const theme = useAppTheme();
-  if (network.isConnected !== false) return null;
+  if (isNetworkOnline(network.isConnected, network.isInternetReachable)) return null;
 
   return (
     <View style={[styles.banner, { backgroundColor: theme.warning }]} accessibilityRole="alert">
