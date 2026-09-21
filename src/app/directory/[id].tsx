@@ -13,6 +13,7 @@ import { mobileApi } from '@/lib/api/endpoints';
 import type { DirectoryRecentMessage } from '@/lib/api/types';
 import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
 import { formatDate } from '@/lib/format';
+import { invalidateFollowingQueries } from '@/lib/following-query-cache';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function DirectoryEntityScreen() {
@@ -35,12 +36,7 @@ export default function DirectoryEntityScreen() {
       else await mobileApi.followEntity(entity.id);
     },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['directory'] }),
-        queryClient.invalidateQueries({ queryKey: ['directory-entity', id] }),
-        queryClient.invalidateQueries({ queryKey: ['followed-entities'] }),
-        queryClient.invalidateQueries({ queryKey: ['feed'] }),
-      ]);
+      await invalidateFollowingQueries(queryClient, id);
     },
     onError: (error) => Alert.alert('Couldn’t update following', error instanceof Error ? error.message : 'Please try again.'),
   });

@@ -22,6 +22,7 @@ import { mobileApi } from '@/lib/api/endpoints';
 import type { MessageType } from '@/lib/api/types';
 import { getMobileEntitlements } from '@/lib/entitlements';
 import { extractCtaLinks, formatDate, stripHtml, titleCase } from '@/lib/format';
+import { invalidateFollowingQueries } from '@/lib/following-query-cache';
 import { useAuth } from '@/providers/auth-provider';
 
 type DetailSection = 'preview' | 'links';
@@ -57,8 +58,7 @@ export default function FeedDetailScreen() {
       else await mobileApi.followEntity(item.entityId);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['followed-entities'] });
-      await queryClient.invalidateQueries({ queryKey: ['feed'] });
+      await invalidateFollowingQueries(queryClient, item?.entityId);
     },
     onError: (error) => Alert.alert('Couldn’t update following', error instanceof Error ? error.message : 'Please try again.'),
   });

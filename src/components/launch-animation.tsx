@@ -10,7 +10,6 @@ import Animated, {
   useSharedValue,
   withDelay,
   withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -22,12 +21,11 @@ type LaunchAnimationProps = {
 
 const MARK_WIDTH = 190;
 const MARK_HEIGHT = 247;
-// iOS spends roughly half a second animating from the Home Screen into the app.
-// Hold the initial envelope-only frame until that system transition is visible;
-// otherwise the branded sequence runs behind it and users only see the final mark.
-const IOS_APP_OPEN_TRANSITION_MS = 650;
-const IMPACT_DELAY_MS = 610;
-const ANIMATION_COMPLETE_MS = IOS_APP_OPEN_TRANSITION_MS + 1920;
+const ARROW_DROP_MS = 520;
+const IMPACT_DELAY_MS = 500;
+const WORD_DROP_DELAY_MS = 720;
+const GOP_COLOR_DELAY_MS = 1080;
+const ANIMATION_COMPLETE_MS = 1480;
 const REDUCED_MOTION_HOLD_MS = 550;
 
 export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
@@ -47,36 +45,32 @@ export function LaunchAnimation({ onFinish }: LaunchAnimationProps) {
       return () => clearTimeout(completionTimer);
     }
 
-    arrowDrop.value = withDelay(
-      IOS_APP_OPEN_TRANSITION_MS + 80,
-      withTiming(0, {
-        duration: 530,
-        easing: Easing.bezier(0.3, 0, 0.85, 0.58),
-      }),
-    );
+    arrowDrop.value = withTiming(0, {
+      duration: ARROW_DROP_MS,
+      easing: Easing.bezier(0.3, 0, 0.85, 0.58),
+    });
 
     impactOffset.value = withDelay(
-      IOS_APP_OPEN_TRANSITION_MS + IMPACT_DELAY_MS,
+      IMPACT_DELAY_MS,
       withSequence(
-        withTiming(27, { duration: 95, easing: Easing.out(Easing.quad) }),
-        withSpring(-9, { damping: 10, stiffness: 260, mass: 0.55 }),
-        withSpring(0, { damping: 13, stiffness: 220, mass: 0.5 }),
+        withTiming(24, { duration: 75, easing: Easing.out(Easing.quad) }),
+        withTiming(-5, { duration: 95, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 140, easing: Easing.out(Easing.cubic) }),
       ),
     );
 
     wordDrop.value = withDelay(
-      IOS_APP_OPEN_TRANSITION_MS + 750,
-      withSpring(0, { damping: 10, stiffness: 145, mass: 0.72 }),
+      WORD_DROP_DELAY_MS,
+      withTiming(0, { duration: 310, easing: Easing.out(Easing.cubic) }),
     );
 
     gopColor.value = withDelay(
-      IOS_APP_OPEN_TRANSITION_MS + 1270,
+      GOP_COLOR_DELAY_MS,
       withTiming(1, { duration: 190, easing: Easing.out(Easing.cubic) }),
     );
 
-    // Keep the completed logo fully visible. The next authentication-loading
-    // frame renders the identical artwork, avoiding a black flash or a second
-    // logo appearance while the native Face ID prompt is presented.
+    // The parent keeps this exact component mounted during authentication so
+    // the settled artwork never jumps, compresses, or flashes before Face ID.
     completionTimer = setTimeout(onFinish, ANIMATION_COMPLETE_MS);
 
     return () => {

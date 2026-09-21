@@ -24,6 +24,7 @@ import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { DirectoryEntity, DirectoryFilters } from '@/lib/api/types';
 import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
+import { invalidateFollowingQueries } from '@/lib/following-query-cache';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function DirectoryScreen() {
@@ -56,12 +57,8 @@ export default function DirectoryScreen() {
       if (entity.isFollowing) return mobileApi.unfollowEntity(entity.id);
       return mobileApi.followEntity(entity.id);
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['directory'] }),
-        queryClient.invalidateQueries({ queryKey: ['followed-entities'] }),
-        queryClient.invalidateQueries({ queryKey: ['feed'] }),
-      ]);
+    onSuccess: async (_data, entity) => {
+      await invalidateFollowingQueries(queryClient, entity.id);
     },
     onError: (error) => Alert.alert('Couldn’t update following', error instanceof Error ? error.message : 'Please try again.'),
   });

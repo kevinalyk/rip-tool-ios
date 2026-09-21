@@ -7,6 +7,7 @@ import { normalizeAppearancePreference, type AppearancePreference } from '@/lib/
 const APPEARANCE_PREFERENCE_KEY = 'inboxgop.appearance-preference';
 
 type AppearanceContextValue = {
+  ready: boolean;
   preference: AppearancePreference;
   setPreference: (preference: AppearancePreference) => Promise<void>;
 };
@@ -19,15 +20,25 @@ function applyPreference(preference: AppearancePreference) {
 
 export function AppearanceProvider({ children }: PropsWithChildren) {
   const [preference, setPreferenceState] = useState<AppearancePreference>('system');
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let active = true;
-    void SecureStore.getItemAsync(APPEARANCE_PREFERENCE_KEY).then((storedPreference) => {
-      if (!active) return;
-      const normalized = normalizeAppearancePreference(storedPreference);
-      applyPreference(normalized);
-      setPreferenceState(normalized);
-    });
+    void (async () => {
+      let normalized: AppearancePreference = 'system';
+      try {
+        normalized = normalizeAppearancePreference(
+          await SecureStore.getItemAsync(APPEARANCE_PREFERENCE_KEY),
+        );
+      } catch {
+        normalized = 'system';
+      } finally {
+        if (!active) return;
+        applyPreference(normalized);
+        setPreferenceState(normalized);
+        setReady(true);
+      }
+    })();
     return () => {
       active = false;
     };
@@ -41,7 +52,10 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
-  const value = useMemo(() => ({ preference, setPreference }), [preference, setPreference]);
+  const value = useMemo(
+    () => ({ ready, preference, setPreference }),
+    [preference, ready, setPreference],
+  );
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
 }
 

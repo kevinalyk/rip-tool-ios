@@ -48,7 +48,11 @@ async function restoreStoredProfile(): Promise<UserProfile | null> {
   return mobileApi.me();
 }
 
-export function AuthProvider({ children }: PropsWithChildren) {
+type AuthProviderProps = PropsWithChildren<{
+  bootstrapEnabled?: boolean;
+}>;
+
+export function AuthProvider({ children, bootstrapEnabled = true }: AuthProviderProps) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<AuthState>('loading');
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -111,12 +115,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [becomeSignedOut]);
 
   useEffect(() => {
+    if (!bootstrapEnabled) return;
+
     async function restore() {
       await bootstrap(true);
     }
 
     void restore();
-  }, [bootstrap]);
+  }, [bootstrap, bootstrapEnabled]);
 
   const retry = useCallback(async () => {
     setState('loading');

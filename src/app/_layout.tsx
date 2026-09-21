@@ -10,7 +10,7 @@ import { FaceIdGate } from '@/components/face-id-gate';
 import { LaunchAnimation, LaunchHoldingScreen } from '@/components/launch-animation';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
-import { AppearanceProvider } from '@/providers/appearance-provider';
+import { AppearanceProvider, useAppearancePreference } from '@/providers/appearance-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
 import { addNotificationResponseListener, getLastNotificationTarget } from '@/lib/notifications';
 import type { NotificationTarget } from '@/lib/notification-target';
@@ -47,7 +47,7 @@ function RootNavigator() {
     });
   }, [openNotificationTarget, state]);
 
-  if (state === 'loading') return <LaunchHoldingScreen />;
+  if (state === 'loading') return null;
 
   if (state === 'locked') {
     return (
@@ -98,26 +98,57 @@ function RootNavigator() {
 }
 
 function LaunchSequencedApp() {
-  const [showLaunchAnimation, setShowLaunchAnimation] = useState(!hasPlayedLaunchAnimation);
+  const { ready: appearanceReady } = useAppearancePreference();
+  const [launchComplete, setLaunchComplete] = useState(hasPlayedLaunchAnimation);
+  const [animateLaunch] = useState(!hasPlayedLaunchAnimation);
 
   const finishLaunchAnimation = useCallback(() => {
     hasPlayedLaunchAnimation = true;
-    setShowLaunchAnimation(false);
+    setLaunchComplete(true);
   }, []);
 
   useEffect(() => {
+    if (!appearanceReady) return;
     void SplashScreen.hideAsync();
-  }, []);
+  }, [appearanceReady]);
 
-  if (showLaunchAnimation) return <LaunchAnimation onFinish={finishLaunchAnimation} />;
+  if (!appearanceReady) return null;
 
-  // AuthProvider intentionally mounts only after the branded launch sequence.
-  // Its initial bootstrap may invoke Face ID, so mounting it earlier would let
-  // the native biometric prompt cover and effectively skip the animation.
-  return <ThemedRootLayout />;
+  return (
+    <ThemedRootLayout
+      animateLaunch={animateLaunch}
+      launchComplete={launchComplete}
+      onLaunchComplete={finishLaunchAnimation}
+    />
+  );
 }
 
-function ThemedRootLayout() {
+type ThemedRootLayoutProps = {
+  animateLaunch: boolean;
+  launchComplete: boolean;
+  onLaunchComplete: () => void;
+};
+
+function SequencedRoot({ animateLaunch, launchComplete, onLaunchComplete }: ThemedRootLayoutProps) {
+  const { state } = useAuth();
+  const scheme = useColorScheme();
+  const colors = themes[scheme === 'dark' ? 'dark' : 'light'];
+  const showLaunchSurface = !launchComplete || state === 'loading';
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator />
+      {showLaunchSurface
+        ? animateLaunch
+          ? <LaunchAnimation onFinish={onLaunchComplete} />
+          : <LaunchHoldingScreen />
+        : null}
+    </View>
+  );
+}
+
+function ThemedRootLayout({ animateLaunch, launchComplete, onLaunchComplete }: ThemedRootLayoutProps) {
   const scheme = useColorScheme();
   const colors = themes[scheme === 'dark' ? 'dark' : 'light'];
   const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -136,9 +167,12 @@ function ThemedRootLayout() {
         },
       }}>
       <AppQueryProvider>
-        <AuthProvider>
-          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-          <RootNavigator />
+        <AuthProvider bootstrapEnabled={launchComplete}>
+          <SequencedRoot
+            animateLaunch={animateLaunch}
+            launchComplete={launchComplete}
+            onLaunchComplete={onLaunchComplete}
+          />
         </AuthProvider>
       </AppQueryProvider>
     </ThemeProvider>
