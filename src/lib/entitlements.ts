@@ -6,6 +6,10 @@ const FAIL_CLOSED_ENTITLEMENTS: MobileClientEntitlements = {
   feedHistoryHours: 1,
   feedDelayHours: 24,
   followedEntityLimit: 0,
+  isAdFree: false,
+  accessSource: 'free',
+  clientPlanCoversMobile: false,
+  shouldPromptAppleCancellation: false,
 };
 
 /**
@@ -43,6 +47,13 @@ export function getMobileEntitlements(user: UserProfile | null): MobileClientEnt
         followedEntityLimit >= 0)
         ? followedEntityLimit
         : FAIL_CLOSED_ENTITLEMENTS.followedEntityLimit,
+    isAdFree: entitlements.isAdFree === true,
+    accessSource:
+      entitlements.accessSource === 'apple_personal' || entitlements.accessSource === 'client_plan'
+        ? entitlements.accessSource
+        : 'free',
+    clientPlanCoversMobile: entitlements.clientPlanCoversMobile === true,
+    shouldPromptAppleCancellation: entitlements.shouldPromptAppleCancellation === true,
   };
 }
 

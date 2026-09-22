@@ -134,7 +134,6 @@ export async function createAccount(input: CreateAccountInput): Promise<CreateAc
     method: 'POST',
     headers: { 'X-Inbox-Signup-Source': 'ios' },
     body: JSON.stringify({
-      clientName: input.clientName.trim(),
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),
       email: input.email.trim().toLowerCase(),

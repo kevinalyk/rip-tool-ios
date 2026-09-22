@@ -29,6 +29,16 @@ function RootNavigator() {
       router.push({ pathname: '/news/[slug]', params: { slug: target.slug } });
       return;
     }
+    if (target.kind === 'account-access') {
+      router.push({
+        pathname: '/subscription/coverage',
+        params: {
+          kind: target.accessKind,
+          cancelApple: target.shouldCancelAppleSubscription ? 'true' : 'false',
+        },
+      });
+      return;
+    }
     router.push({
       pathname: '/feed/[id]',
       params: { id: target.feedItemId, type: target.messageType },
@@ -92,6 +102,7 @@ function RootNavigator() {
         <Stack.Screen name="directory/[id]" options={{ title: 'Entity profile' }} />
         <Stack.Screen name="news/index" options={{ title: "What's New" }} />
         <Stack.Screen name="news/[slug]" options={{ title: 'Update' }} />
+        <Stack.Screen name="subscription/coverage" options={{ title: 'Mobile access' }} />
       </Stack.Protected>
     </Stack>
   );

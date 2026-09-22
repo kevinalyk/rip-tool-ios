@@ -1,6 +1,11 @@
 export type NotificationTarget =
   | { kind: 'feed'; feedItemId: string; messageType: 'email' | 'sms' }
-  | { kind: 'announcement'; slug: string };
+  | { kind: 'announcement'; slug: string }
+  | {
+      kind: 'account-access';
+      accessKind: 'web_ready' | 'covered';
+      shouldCancelAppleSubscription: boolean;
+    };
 
 export function decodeNotificationTarget(data: unknown): NotificationTarget | null {
   if (!data || typeof data !== 'object') return null;
@@ -19,6 +24,14 @@ export function decodeNotificationTarget(data: unknown): NotificationTarget | nu
 
   if (typeof record.announcementSlug === 'string' && record.announcementSlug.trim()) {
     return { kind: 'announcement', slug: record.announcementSlug.trim() };
+  }
+
+  if (record.accountAccessKind === 'web_ready' || record.accountAccessKind === 'covered') {
+    return {
+      kind: 'account-access',
+      accessKind: record.accountAccessKind,
+      shouldCancelAppleSubscription: record.shouldCancelAppleSubscription === true,
+    };
   }
 
   return null;

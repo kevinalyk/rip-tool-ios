@@ -17,6 +17,17 @@ test('decodes announcement notification targets', () => {
   );
 });
 
+test('decodes account-access notification targets', () => {
+  assert.deepEqual(
+    decodeNotificationTarget({ accountAccessKind: 'covered', shouldCancelAppleSubscription: true }),
+    { kind: 'account-access', accessKind: 'covered', shouldCancelAppleSubscription: true },
+  );
+  assert.deepEqual(
+    decodeNotificationTarget({ accountAccessKind: 'web_ready', shouldCancelAppleSubscription: false }),
+    { kind: 'account-access', accessKind: 'web_ready', shouldCancelAppleSubscription: false },
+  );
+});
+
 test('rejects malformed notification targets', () => {
   assert.equal(decodeNotificationTarget(null), null);
   assert.equal(decodeNotificationTarget({ feedItemId: 'message-1', messageType: 'push' }), null);

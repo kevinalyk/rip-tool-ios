@@ -8,6 +8,20 @@ import {
   sanitizeFeedFiltersForEntitlements,
 } from '../entitlements';
 
+const FREE_META = {
+  isAdFree: false,
+  accessSource: 'free' as const,
+  clientPlanCoversMobile: false,
+  shouldPromptAppleCancellation: false,
+};
+
+const PAID_META = {
+  isAdFree: true,
+  accessSource: 'client_plan' as const,
+  clientPlanCoversMobile: true,
+  shouldPromptAppleCancellation: false,
+};
+
 function profile(entitlements?: Partial<MobileClientEntitlements>): UserProfile {
   return {
     id: 'user-1',
@@ -36,6 +50,7 @@ test('missing mobile entitlements fail closed to Starter access', () => {
     feedHistoryHours: 1,
     feedDelayHours: 24,
     followedEntityLimit: 0,
+    ...FREE_META,
   });
   assert.deepEqual(getMobileEntitlements(profile()), {
     canSearchAndFilterFeed: false,
@@ -43,6 +58,7 @@ test('missing mobile entitlements fail closed to Starter access', () => {
     feedHistoryHours: 1,
     feedDelayHours: 24,
     followedEntityLimit: 0,
+    ...FREE_META,
   });
   assert.deepEqual(
     getMobileEntitlements(
@@ -59,6 +75,7 @@ test('missing mobile entitlements fail closed to Starter access', () => {
       feedHistoryHours: 1,
       feedDelayHours: 24,
       followedEntityLimit: 0,
+      ...FREE_META,
     },
   );
 });
@@ -70,6 +87,7 @@ test('valid server capabilities are used without deriving them from the plan nam
     feedHistoryHours: 72,
     feedDelayHours: 0,
     followedEntityLimit: 3,
+    ...PAID_META,
   });
   user.client!.subscriptionPlan = 'unexpected-display-name';
 
@@ -79,6 +97,7 @@ test('valid server capabilities are used without deriving them from the plan nam
     feedHistoryHours: 72,
     feedDelayHours: 0,
     followedEntityLimit: 3,
+    ...PAID_META,
   });
 });
 
@@ -99,6 +118,7 @@ test('malformed server capability values fail closed', () => {
       feedHistoryHours: 1,
       feedDelayHours: 24,
       followedEntityLimit: 0,
+      ...FREE_META,
     },
   );
 });
@@ -107,7 +127,7 @@ test('locked accounts cannot serialize stale feed filters', () => {
   const filters = { search: 'fundraising', state: 'TX', subscriptionsOnly: true };
   const starter = getMobileEntitlements(profile());
   const paid = getMobileEntitlements(
-    profile({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, feedDelayHours: 0, followedEntityLimit: 3 }),
+    profile({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, feedDelayHours: 0, followedEntityLimit: 3, ...PAID_META }),
   );
 
   assert.deepEqual(sanitizeFeedFiltersForEntitlements(filters, starter), {});
@@ -115,7 +135,7 @@ test('locked accounts cannot serialize stale feed filters', () => {
 });
 
 test('follow capability handles zero, limited, and unlimited plans', () => {
-  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: false, canUseAlerts: false, feedHistoryHours: 1, feedDelayHours: 24, followedEntityLimit: 0 }), false);
-  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, feedDelayHours: 0, followedEntityLimit: 3 }), true);
-  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: null, feedDelayHours: 0, followedEntityLimit: null }), true);
+  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: false, canUseAlerts: false, feedHistoryHours: 1, feedDelayHours: 24, followedEntityLimit: 0, ...FREE_META }), false);
+  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: 72, feedDelayHours: 0, followedEntityLimit: 3, ...PAID_META }), true);
+  assert.equal(canFollowNewEntities({ canSearchAndFilterFeed: true, canUseAlerts: true, feedHistoryHours: null, feedDelayHours: 0, followedEntityLimit: null, ...PAID_META }), true);
 });

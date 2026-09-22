@@ -21,6 +21,10 @@ export type MobileClientEntitlements = {
   feedHistoryHours: number | null;
   feedDelayHours: number;
   followedEntityLimit: number | null;
+  isAdFree: boolean;
+  accessSource: 'free' | 'apple_personal' | 'client_plan';
+  clientPlanCoversMobile: boolean;
+  shouldPromptAppleCancellation: boolean;
 };
 
 export type ClientProfile = {
@@ -37,6 +41,13 @@ export type ClientProfile = {
 
 export type UserProfile = LoginUser & {
   firstLogin: boolean;
+  signupSource?: string;
+  webOnboardingComplete?: boolean;
+  mobileSubscription?: {
+    plan: string;
+    status: string;
+    expiresAt: string | null;
+  };
   client: ClientProfile | null;
 };
 
@@ -51,7 +62,6 @@ export type LoginResponse = {
 export type RefreshResponse = Pick<LoginResponse, 'accessToken' | 'refreshToken' | 'expiresIn' | 'tokenType'>;
 
 export type CreateAccountInput = {
-  clientName: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -64,6 +74,7 @@ export type CreateAccountResponse = {
   clientSlug: string;
   userId: string;
   requiresTrialCheckout: boolean;
+  requiresWebOnboarding: boolean;
 };
 
 export type Entity = {
