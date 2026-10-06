@@ -7,6 +7,24 @@ export type NotificationTarget =
       shouldCancelAppleSubscription: boolean;
     };
 
+export function notificationQueryKeys(target: NotificationTarget): readonly (readonly unknown[])[] {
+  if (target.kind === 'announcement') {
+    return [
+      ['announcements'],
+      ['announcement', target.slug],
+    ];
+  }
+
+  if (target.kind === 'account-access') return [];
+
+  return [
+    ['feed'],
+    ['feed-filters'],
+    ['feed-item', target.messageType, target.feedItemId],
+    ['directory'],
+  ];
+}
+
 export function decodeNotificationTarget(data: unknown): NotificationTarget | null {
   if (!data || typeof data !== 'object') return null;
   const record = data as Record<string, unknown>;

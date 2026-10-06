@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -10,21 +11,41 @@ import { FaceIdGate } from '@/components/face-id-gate';
 import { LaunchAnimation, LaunchHoldingScreen } from '@/components/launch-animation';
 import { themes } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
-import { AppearanceProvider } from '@/providers/appearance-provider';
+import { AppearanceProvider, useAppearancePreference } from '@/providers/appearance-provider';
 import { AppQueryProvider } from '@/providers/query-provider';
-import { addNotificationResponseListener, getLastNotificationTarget } from '@/lib/notifications';
-import type { NotificationTarget } from '@/lib/notification-target';
+import {
+  addNotificationReceivedListener,
+  addNotificationResponseListener,
+  getLastNotificationTarget,
+} from '@/lib/notifications';
+import { notificationQueryKeys, type NotificationTarget } from '@/lib/notification-target';
 
 void SplashScreen.preventAutoHideAsync();
 
 let hasPlayedLaunchAnimation = false;
 
 function RootNavigator() {
-  const { state, error, retry, unlockWithFaceId, continueWithPassword } = useAuth();
+  const { state, error, retry, refreshProfile, unlockWithFaceId, continueWithPassword } = useAuth();
+  const queryClient = useQueryClient();
   const scheme = useColorScheme();
   const theme = themes[scheme === 'dark' ? 'dark' : 'light'];
 
+  const refreshNotificationTarget = useCallback((target: NotificationTarget) => {
+    if (target.kind === 'account-access') {
+      void refreshProfile()
+        .catch(() => undefined)
+        .then(() => queryClient.invalidateQueries({ refetchType: 'active' }));
+      return;
+    }
+    void Promise.all(
+      notificationQueryKeys(target).map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      ),
+    );
+  }, [queryClient, refreshProfile]);
+
   const openNotificationTarget = useCallback((target: NotificationTarget) => {
+    refreshNotificationTarget(target);
     if (target.kind === 'announcement') {
       router.push({ pathname: '/news/[slug]', params: { slug: target.slug } });
       return;
@@ -43,7 +64,12 @@ function RootNavigator() {
       pathname: '/feed/[id]',
       params: { id: target.feedItemId, type: target.messageType },
     });
-  }, []);
+  }, [refreshNotificationTarget]);
+
+  useEffect(() => {
+    const subscription = addNotificationReceivedListener(refreshNotificationTarget);
+    return () => subscription.remove();
+  }, [refreshNotificationTarget]);
 
   useEffect(() => {
     const subscription = addNotificationResponseListener(openNotificationTarget);
@@ -57,7 +83,7 @@ function RootNavigator() {
     });
   }, [openNotificationTarget, state]);
 
-  if (state === 'loading') return <LaunchHoldingScreen />;
+  if (state === 'loading') return null;
 
   if (state === 'locked') {
     return (
@@ -109,26 +135,57 @@ function RootNavigator() {
 }
 
 function LaunchSequencedApp() {
-  const [showLaunchAnimation, setShowLaunchAnimation] = useState(!hasPlayedLaunchAnimation);
+  const { ready: appearanceReady } = useAppearancePreference();
+  const [launchComplete, setLaunchComplete] = useState(hasPlayedLaunchAnimation);
+  const [animateLaunch] = useState(!hasPlayedLaunchAnimation);
 
   const finishLaunchAnimation = useCallback(() => {
     hasPlayedLaunchAnimation = true;
-    setShowLaunchAnimation(false);
+    setLaunchComplete(true);
   }, []);
 
   useEffect(() => {
+    if (!appearanceReady) return;
     void SplashScreen.hideAsync();
-  }, []);
+  }, [appearanceReady]);
 
-  if (showLaunchAnimation) return <LaunchAnimation onFinish={finishLaunchAnimation} />;
+  if (!appearanceReady) return null;
 
-  // AuthProvider intentionally mounts only after the branded launch sequence.
-  // Its initial bootstrap may invoke Face ID, so mounting it earlier would let
-  // the native biometric prompt cover and effectively skip the animation.
-  return <ThemedRootLayout />;
+  return (
+    <ThemedRootLayout
+      animateLaunch={animateLaunch}
+      launchComplete={launchComplete}
+      onLaunchComplete={finishLaunchAnimation}
+    />
+  );
 }
 
-function ThemedRootLayout() {
+type ThemedRootLayoutProps = {
+  animateLaunch: boolean;
+  launchComplete: boolean;
+  onLaunchComplete: () => void;
+};
+
+function SequencedRoot({ animateLaunch, launchComplete, onLaunchComplete }: ThemedRootLayoutProps) {
+  const { state } = useAuth();
+  const scheme = useColorScheme();
+  const colors = themes[scheme === 'dark' ? 'dark' : 'light'];
+  const showLaunchSurface = !launchComplete || state === 'loading';
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator />
+      {showLaunchSurface
+        ? animateLaunch
+          ? <LaunchAnimation onFinish={onLaunchComplete} />
+          : <LaunchHoldingScreen />
+        : null}
+    </View>
+  );
+}
+
+function ThemedRootLayout({ animateLaunch, launchComplete, onLaunchComplete }: ThemedRootLayoutProps) {
   const scheme = useColorScheme();
   const colors = themes[scheme === 'dark' ? 'dark' : 'light'];
   const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -147,9 +204,12 @@ function ThemedRootLayout() {
         },
       }}>
       <AppQueryProvider>
-        <AuthProvider>
-          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-          <RootNavigator />
+        <AuthProvider bootstrapEnabled={launchComplete}>
+          <SequencedRoot
+            animateLaunch={animateLaunch}
+            launchComplete={launchComplete}
+            onLaunchComplete={onLaunchComplete}
+          />
         </AuthProvider>
       </AppQueryProvider>
     </ThemeProvider>

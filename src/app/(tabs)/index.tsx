@@ -24,6 +24,7 @@ import { radii, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { FeedFilters, FeedItem, SavedFeedView } from '@/lib/api/types';
 import { getMobileEntitlements, sanitizeFeedFiltersForEntitlements } from '@/lib/entitlements';
+import { getMobileDataScope } from '@/lib/mobile-data-scope';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function FeedScreen() {
@@ -38,6 +39,7 @@ export default function FeedScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSavedViews, setShowSavedViews] = useState(false);
   const entitlements = useMemo(() => getMobileEntitlements(user), [user]);
+  const dataScope = useMemo(() => getMobileDataScope(user), [user]);
   const canSearchAndFilter = entitlements.canSearchAndFilterFeed;
   const starterHistoryHours = entitlements.feedHistoryHours ?? 1;
   const hasDelayedFeed = entitlements.feedDelayHours > 0;
@@ -78,12 +80,12 @@ export default function FeedScreen() {
   ].filter(Boolean).length;
 
   const filterOptions = useQuery({
-    queryKey: ['feed-filters'],
+    queryKey: ['feed-filters', dataScope],
     queryFn: mobileApi.feedFilters,
     enabled: canSearchAndFilter,
   });
   const savedViews = useQuery({
-    queryKey: ['feed-saved-views', user?.id],
+    queryKey: ['feed-saved-views', user?.id, dataScope],
     queryFn: mobileApi.savedFeedViews,
     enabled: canSearchAndFilter && Boolean(user?.id),
   });
@@ -95,7 +97,7 @@ export default function FeedScreen() {
     },
   });
   const feed = useInfiniteQuery({
-    queryKey: ['feed', effectiveFilters],
+    queryKey: ['feed', dataScope, effectiveFilters],
     queryFn: ({ pageParam }) => mobileApi.feed(effectiveFilters, pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined),
@@ -166,7 +168,11 @@ export default function FeedScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => void Promise.allSettled([feed.refetch(), savedViews.refetch(), refreshProfile()])}
+            onRefresh={() => void Promise.allSettled([
+              feed.refetch(),
+              refreshProfile(),
+              ...(canSearchAndFilter ? [filterOptions.refetch(), savedViews.refetch()] : []),
+            ])}
             tintColor={theme.red}
           />
         }

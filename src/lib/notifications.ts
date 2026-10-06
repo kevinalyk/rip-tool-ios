@@ -194,6 +194,15 @@ export function addNotificationResponseListener(
   });
 }
 
+export function addNotificationReceivedListener(
+  onReceiveTarget: (target: NotificationTarget) => void,
+) {
+  return Notifications.addNotificationReceivedListener((notification) => {
+    const target = decodeNotificationTarget(notification.request.content.data);
+    if (target) onReceiveTarget(target);
+  });
+}
+
 export async function getLastNotificationTarget(): Promise<NotificationTarget | null> {
   const response = await Notifications.getLastNotificationResponseAsync();
   const target = decodeNotificationTarget(response?.notification.request.content.data);

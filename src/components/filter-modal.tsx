@@ -8,6 +8,7 @@ import { FilterSelectionSheet, type FilterSelectionOption } from '@/components/f
 import { PrimaryButton } from '@/components/primary-button';
 import { radii, spacing, useAppTheme } from '@/constants/theme';
 import type { FeedFilterOptions, FeedFilters, MessageFilter, SelectOption } from '@/lib/api/types';
+import { sortFeedFilterEntities } from '@/lib/feed-filter-options';
 import { titleCase } from '@/lib/format';
 import { resolveDonationPlatformOptions } from '@/lib/select-options';
 
@@ -139,12 +140,13 @@ export function FilterModal({ visible, filters, options, onClose, onApply }: Fil
 
   const entityOptions = useMemo<FilterSelectionOption[]>(
     () =>
-      (options?.entities || []).map((entity) => ({
-        value: entity.id,
-        label: entity.name,
-        detail: [titleCase(entity.type), titleCase(entity.party), entity.state].filter(Boolean).join(' · '),
-        isFollowing: entity.isFollowing,
-      })),
+      sortFeedFilterEntities(options?.entities || [])
+        .map((entity) => ({
+          value: entity.id,
+          label: entity.name,
+          detail: [titleCase(entity.type), titleCase(entity.party), entity.state].filter(Boolean).join(' · '),
+          isFollowing: entity.isFollowing,
+        })),
     [options?.entities],
   );
   const stateOptions = useMemo<FilterSelectionOption[]>(

@@ -31,8 +31,8 @@
           "dark": {
             "backgroundColor": "#0B1720"
           },
-          "image": "./assets/images/inbox-gop-envelope-layer.png",
-          "imageWidth": 116
+          "image": "./assets/images/inbox-gop-launch.png",
+          "imageWidth": 250
         }
       ],
       "expo-secure-store",
