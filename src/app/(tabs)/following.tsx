@@ -13,6 +13,8 @@ import { mobileApi } from '@/lib/api/endpoints';
 import type { Entity } from '@/lib/api/types';
 import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
 import { titleCase } from '@/lib/format';
+import { invalidateFollowingQueries } from '@/lib/following-query-cache';
+import { getMobileDataScope } from '@/lib/mobile-data-scope';
 import {
   disableFollowingPushNotifications,
   enableFollowingPushNotifications,
@@ -26,8 +28,9 @@ export default function FollowingScreen() {
   const queryClient = useQueryClient();
   const { user, refreshProfile } = useAuth();
   const entitlements = getMobileEntitlements(user);
+  const dataScope = getMobileDataScope(user);
   const canAddFollows = canFollowNewEntities(entitlements);
-  const followed = useQuery({ queryKey: ['followed-entities'], queryFn: mobileApi.followedEntities });
+  const followed = useQuery({ queryKey: ['followed-entities', dataScope], queryFn: mobileApi.followedEntities });
   const followingNotifications = useQuery({
     queryKey: ['following-push-preference', user?.id],
     queryFn: () => loadFollowingPushPreference(user!.id),
@@ -67,9 +70,8 @@ export default function FollowingScreen() {
   }, [refetchFollowingNotifications]));
   const unfollow = useMutation({
     mutationFn: mobileApi.unfollowEntity,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['followed-entities'] });
-      await queryClient.invalidateQueries({ queryKey: ['feed'] });
+    onSuccess: async (_data, entityId) => {
+      await invalidateFollowingQueries(queryClient, entityId);
     },
     onError: (error) => Alert.alert('Couldn’t unfollow', error instanceof Error ? error.message : 'Please try again.'),
   });

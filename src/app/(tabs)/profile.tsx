@@ -210,6 +210,13 @@ export default function ProfileScreen() {
           <SettingsRow icon="layers-outline" label="Plan" value={titleCase(user.client?.subscriptionPlan) || '—'} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow icon="pulse-outline" label="Status" value={titleCase(user.client?.subscriptionStatus) || '—'} />
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <SettingsRow
+            icon="phone-portrait-outline"
+            label="Mobile access"
+            value={user.client?.entitlements?.accessSource === 'apple_personal' ? 'Personal' : user.client?.entitlements?.clientPlanCoversMobile ? 'Included' : 'Free'}
+            onPress={() => router.push('/subscription/coverage')}
+          />
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>

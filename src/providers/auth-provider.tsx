@@ -48,7 +48,11 @@ async function restoreStoredProfile(): Promise<UserProfile | null> {
   return mobileApi.me();
 }
 
-export function AuthProvider({ children }: PropsWithChildren) {
+type AuthProviderProps = PropsWithChildren<{
+  bootstrapEnabled?: boolean;
+}>;
+
+export function AuthProvider({ children, bootstrapEnabled = true }: AuthProviderProps) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<AuthState>('loading');
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -111,12 +115,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [becomeSignedOut]);
 
   useEffect(() => {
+    if (!bootstrapEnabled) return;
+
     async function restore() {
       await bootstrap(true);
     }
 
     void restore();
-  }, [bootstrap]);
+  }, [bootstrap, bootstrapEnabled]);
 
   const retry = useCallback(async () => {
     setState('loading');
@@ -225,18 +231,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
         void (async () => {
           if (timeAway >= FACE_ID_RELOCK_MS && (await isFaceIdEnabled())) {
             await unlockWithFaceId();
+            await queryClient.invalidateQueries({ refetchType: 'active' }).catch(() => undefined);
             return;
           }
 
-          // Plan changes made on the web should update the native controls promptly.
-          // A transient network failure is non-fatal; the API remains authoritative.
+          // Refresh both the access context and every visible server-backed screen.
+          // This catches new messages and changes made on the web or another device.
           await refreshProfile().catch(() => undefined);
+          await queryClient.invalidateQueries({ refetchType: 'active' }).catch(() => undefined);
         })();
       }
     });
 
     return () => subscription.remove();
-  }, [refreshProfile, state, unlockWithFaceId]);
+  }, [queryClient, refreshProfile, state, unlockWithFaceId]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ state, user, error, signIn, signUp, signOut, retry, refreshProfile, unlockWithFaceId, continueWithPassword }),

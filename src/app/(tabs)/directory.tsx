@@ -24,6 +24,8 @@ import { radii, shadows, spacing, useAppTheme } from '@/constants/theme';
 import { mobileApi } from '@/lib/api/endpoints';
 import type { DirectoryEntity, DirectoryFilters } from '@/lib/api/types';
 import { canFollowNewEntities, getMobileEntitlements } from '@/lib/entitlements';
+import { invalidateFollowingQueries } from '@/lib/following-query-cache';
+import { getMobileDataScope } from '@/lib/mobile-data-scope';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function DirectoryScreen() {
@@ -35,15 +37,16 @@ export default function DirectoryScreen() {
   const [filters, setFilters] = useState<DirectoryFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const canAddFollows = canFollowNewEntities(getMobileEntitlements(user));
+  const dataScope = useMemo(() => getMobileDataScope(user), [user]);
   const effectiveFilters = useMemo(
     () => ({ ...filters, search: submittedSearch || undefined }),
     [filters, submittedSearch],
   );
   const activeFilterCount = [filters.party, filters.state, filters.entityType].filter(Boolean).length;
 
-  const options = useQuery({ queryKey: ['directory-options'], queryFn: mobileApi.directoryOptions });
+  const options = useQuery({ queryKey: ['directory-options', dataScope], queryFn: mobileApi.directoryOptions });
   const directory = useInfiniteQuery({
-    queryKey: ['directory', effectiveFilters],
+    queryKey: ['directory', dataScope, effectiveFilters],
     queryFn: ({ pageParam }) => mobileApi.directory(effectiveFilters, pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined),
@@ -56,12 +59,8 @@ export default function DirectoryScreen() {
       if (entity.isFollowing) return mobileApi.unfollowEntity(entity.id);
       return mobileApi.followEntity(entity.id);
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['directory'] }),
-        queryClient.invalidateQueries({ queryKey: ['followed-entities'] }),
-        queryClient.invalidateQueries({ queryKey: ['feed'] }),
-      ]);
+    onSuccess: async (_data, entity) => {
+      await invalidateFollowingQueries(queryClient, entity.id);
     },
     onError: (error) => Alert.alert('Couldn’t update following', error instanceof Error ? error.message : 'Please try again.'),
   });
@@ -120,7 +119,13 @@ export default function DirectoryScreen() {
           if (directory.hasNextPage && !directory.isFetchingNextPage) void directory.fetchNextPage();
         }}
         onEndReachedThreshold={0.45}
-        refreshControl={<RefreshControl refreshing={directory.isRefetching && !directory.isFetchingNextPage} onRefresh={() => void directory.refetch()} tintColor={theme.red} />}
+        refreshControl={(
+          <RefreshControl
+            refreshing={directory.isRefetching && !directory.isFetchingNextPage}
+            onRefresh={() => void Promise.allSettled([directory.refetch(), options.refetch()])}
+            tintColor={theme.red}
+          />
+        )}
         renderItem={renderEntity}
         ListHeaderComponent={
           <View style={styles.header}>

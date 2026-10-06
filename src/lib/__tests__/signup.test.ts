@@ -4,7 +4,6 @@ import test from 'node:test';
 import { validateSignup, type SignupFormValues } from '../signup';
 
 const valid: SignupFormValues = {
-  clientName: 'Example Campaign',
   firstName: 'Jamie',
   lastName: 'Smith',
   email: 'jamie@example.com',
@@ -14,12 +13,12 @@ const valid: SignupFormValues = {
   agreeToPrivacy: true,
 };
 
-test('accepts the same complete signup data as the web app', () => {
+test('accepts complete personal-account signup data', () => {
   assert.equal(validateSignup(valid), null);
 });
 
 test('requires every field and legal consent', () => {
-  assert.match(validateSignup({ ...valid, clientName: '' }) || '', /required/);
+  assert.match(validateSignup({ ...valid, firstName: '' }) || '', /required/);
   assert.match(validateSignup({ ...valid, agreeToTerms: false }) || '', /agree/);
   assert.match(validateSignup({ ...valid, agreeToPrivacy: false }) || '', /agree/);
 });

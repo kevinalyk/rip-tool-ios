@@ -1,5 +1,4 @@
 export type SignupFormValues = {
-  clientName: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -10,7 +9,7 @@ export type SignupFormValues = {
 };
 
 export function validateSignup(values: SignupFormValues): string | null {
-  if (![values.clientName, values.firstName, values.lastName, values.email, values.password, values.confirmPassword].every((value) => value.trim())) {
+  if (![values.firstName, values.lastName, values.email, values.password, values.confirmPassword].every((value) => value.trim())) {
     return 'All fields are required.';
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) return 'Please enter a valid email address.';

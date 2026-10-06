@@ -22,7 +22,6 @@ import { validateSignup, type SignupFormValues } from '@/lib/signup';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_FORM: SignupFormValues = {
-  clientName: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -62,7 +61,6 @@ export default function SignupScreen() {
     setError(null);
     try {
       await signUp({
-        clientName: form.clientName,
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
@@ -85,19 +83,10 @@ export default function SignupScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={styles.intro}>
           <Text style={[styles.title, { color: theme.text }]}>Create your {PRODUCT_NAME} account</Text>
-          <Text style={[styles.subtitle, { color: theme.textMuted }]}>Register your organization and start on the Free plan.</Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>Create your personal account. Free web access is included.</Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <SignupField
-            label="Organization name"
-            value={form.clientName}
-            onChangeText={(value) => updateText('clientName', value)}
-            autoComplete="organization"
-            textContentType="organizationName"
-            placeholder="Campaign or organization"
-          />
-
           <View style={styles.nameRow}>
             <View style={styles.flex}>
               <SignupField
@@ -155,7 +144,7 @@ export default function SignupScreen() {
 
           <View style={[styles.planNote, { backgroundColor: theme.surfaceMuted }]}>
             <Ionicons name="information-circle-outline" size={21} color={theme.navy} />
-            <Text style={[styles.planNoteText, { color: theme.textMuted }]}>Free accounts receive a delayed one-hour feed window. You can upgrade on the website later.</Text>
+            <Text style={[styles.planNoteText, { color: theme.textMuted }]}>Free accounts receive a delayed one-hour feed window. You can add the $10 Personal mobile plan or upgrade your web workspace later.</Text>
           </View>
 
           <ConsentRow
