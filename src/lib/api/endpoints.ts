@@ -2,7 +2,6 @@ import { ApiError, apiRequest } from '@/lib/api/client';
 import { buildDirectoryQuery, buildFeedQuery } from '@/lib/api/query';
 import {
   excludeCorporateEntities,
-  excludeCorporateEntityTypes,
   excludeCorporateFeedItems,
   isCorporateEntity,
 } from '@/lib/rip-entity-scope';
@@ -39,7 +38,6 @@ export const mobileApi = {
     const options = await apiRequest<FeedFilterOptions>('feed/filters');
     return {
       ...options,
-      entityTypes: options.entityTypes ? excludeCorporateEntityTypes(options.entityTypes) : undefined,
       entities: options.entities ? excludeCorporateEntities(options.entities) : undefined,
     };
   },
@@ -72,10 +70,7 @@ export const mobileApi = {
     const page = await apiRequest<DirectoryPage>(`entities${buildDirectoryQuery(filters, cursor)}`);
     return { ...page, data: excludeCorporateEntities(page.data) };
   },
-  directoryOptions: async () => {
-    const options = await apiRequest<DirectoryOptions>('entities/options');
-    return { ...options, entityTypes: excludeCorporateEntityTypes(options.entityTypes) };
-  },
+  directoryOptions: () => apiRequest<DirectoryOptions>('entities/options'),
   directoryEntity: async (id: string) => {
     const result = await apiRequest<{ data: DirectoryEntityDetail }>(`entities/${encodeURIComponent(id)}`);
     if (isCorporateEntity(result.data)) {
@@ -88,7 +83,6 @@ export const mobileApi = {
     const options = await apiRequest<AlertFilterOptions>('alerts/options');
     return {
       ...options,
-      entityTypes: excludeCorporateEntityTypes(options.entityTypes),
       entities: excludeCorporateEntities(options.entities),
     };
   },
