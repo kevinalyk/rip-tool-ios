@@ -93,6 +93,10 @@ export default function ProfileScreen() {
   if (!user) return null;
 
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+  const trialEndsAt = user.client?.trialExpiresAt ? new Date(user.client.trialExpiresAt) : null;
+  const isProfessionalTrial = user.client?.subscriptionPlan === 'enterprise'
+    && user.client.subscriptionStatus === 'trialing'
+    && trialEndsAt !== null;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -207,9 +211,15 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>ORGANIZATION</Text>
           <SettingsRow icon="business-outline" label="Organization" value={user.client?.name || 'Not assigned'} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <SettingsRow icon="layers-outline" label="Plan" value={titleCase(user.client?.subscriptionPlan) || '—'} />
+          <SettingsRow icon="layers-outline" label="Plan" value={isProfessionalTrial ? 'Professional trial' : titleCase(user.client?.subscriptionPlan) || '—'} />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow icon="pulse-outline" label="Status" value={titleCase(user.client?.subscriptionStatus) || '—'} />
+          {isProfessionalTrial && trialEndsAt ? (
+            <>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <SettingsRow icon="calendar-outline" label="Trial ends" value={trialEndsAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} />
+            </>
+          ) : null}
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsRow
             icon="phone-portrait-outline"

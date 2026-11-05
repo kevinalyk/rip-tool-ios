@@ -81,6 +81,7 @@ export type Entity = {
   id: string;
   name: string;
   type: string;
+  isCorporate?: boolean;
   description?: string | null;
   party: string | null;
   state: string | null;
@@ -244,7 +245,7 @@ export type AlertFilterOptions = {
   tags: SelectOption[];
 };
 
-export type FeedFilterEntity = Pick<Entity, 'id' | 'name' | 'type' | 'party' | 'state'> & {
+export type FeedFilterEntity = Pick<Entity, 'id' | 'name' | 'type' | 'isCorporate' | 'party' | 'state'> & {
   isFollowing: boolean;
 };
 
